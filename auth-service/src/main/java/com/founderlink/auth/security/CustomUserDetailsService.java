@@ -3,7 +3,6 @@ package com.founderlink.auth.security;
 import com.founderlink.auth.entity.User;
 import com.founderlink.auth.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
