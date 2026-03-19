@@ -1,0 +1,132 @@
+package com.founderlink.investment.serviceImpl;
+
+import java.util.List;
+import java.util.stream.Collectors;
+
+import org.springframework.stereotype.Service;
+
+import com.founderlink.investment.dto.request.InvestmentRequestDto;
+import com.founderlink.investment.dto.request.InvestmentStatusUpdateDto;
+import com.founderlink.investment.dto.response.InvestmentResponseDto;
+import com.founderlink.investment.entity.Investment;
+import com.founderlink.investment.entity.InvestmentStatus;
+import com.founderlink.investment.events.InvestmentCreatedEvent;
+import com.founderlink.investment.events.InvestmentEventPublisher;
+import com.founderlink.investment.exception.DuplicateInvestmentException;
+import com.founderlink.investment.exception.InvalidStatusTransitionException;
+import com.founderlink.investment.exception.InvestmentNotFoundException;
+import com.founderlink.investment.mapper.InvestmentMapper;
+import com.founderlink.investment.repository.InvestmentRepository;
+import com.founderlink.investment.service.InvestmentService;
+
+import jakarta.transaction.Transactional;
+import lombok.RequiredArgsConstructor;
+
+@Service
+@Transactional
+@RequiredArgsConstructor
+public class InvestmentServiceImpl implements InvestmentService {
+
+    private final InvestmentRepository investmentRepository;
+    private final InvestmentEventPublisher eventPublisher;
+    private final InvestmentMapper investmentMapper; 
+
+    @Override
+    public InvestmentResponseDto createInvestment(Long investorId,
+                                                   InvestmentRequestDto requestDto) {
+    	
+        if (investmentRepository.existsByStartupIdAndInvestorId(
+                requestDto.getStartupId(), investorId)) {
+            throw new DuplicateInvestmentException(
+                    "You have already invested in this startup");
+        }
+
+        Investment investment = investmentMapper.toEntity(requestDto, investorId);
+
+ 
+        Investment savedInvestment = investmentRepository.save(investment);
+
+        InvestmentCreatedEvent event = new InvestmentCreatedEvent(
+                savedInvestment.getStartupId(),
+                savedInvestment.getInvestorId(),
+                savedInvestment.getAmount()
+        );
+        eventPublisher.publishInvestmentCreatedEvent(event);
+
+        return investmentMapper.toResponseDto(savedInvestment);
+    }
+
+
+    @Override
+    public List<InvestmentResponseDto> getInvestmentsByStartupId(Long startupId) {
+
+        List<Investment> investments = investmentRepository
+                .findByStartupId(startupId);
+
+        return investments.stream()
+                .map(investmentMapper::toResponseDto)
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public List<InvestmentResponseDto> getInvestmentsByInvestorId(Long investorId) {
+
+        List<Investment> investments = investmentRepository
+                .findByInvestorId(investorId);
+
+        return investments.stream()
+                .map(investmentMapper::toResponseDto)
+                .collect(Collectors.toList());
+    }
+
+
+    @Override
+    public InvestmentResponseDto updateInvestmentStatus(Long investmentId,
+                                                         InvestmentStatusUpdateDto statusUpdateDto) {
+
+        Investment investment = investmentRepository.findById(investmentId)
+                .orElseThrow(() -> new InvestmentNotFoundException(
+                        "Investment not found with id: " + investmentId));
+
+        validateStatusTransition(investment.getStatus(),
+                statusUpdateDto.getStatus());
+
+        investment.setStatus(statusUpdateDto.getStatus());
+
+        Investment updatedInvestment = investmentRepository.save(investment);
+
+        return investmentMapper.toResponseDto(updatedInvestment);
+    }
+
+    @Override
+    public InvestmentResponseDto getInvestmentById(Long investmentId) {
+
+        Investment investment = investmentRepository.findById(investmentId)
+                .orElseThrow(() -> new InvestmentNotFoundException(
+                        "Investment not found with id: " + investmentId));
+
+        return investmentMapper.toResponseDto(investment);
+    }
+    
+    private void validateStatusTransition(InvestmentStatus currentStatus,
+            InvestmentStatus newStatus) {
+
+		if (currentStatus == InvestmentStatus.COMPLETED) {
+			throw new InvalidStatusTransitionException(
+			"Cannot update a COMPLETED investment");
+		}
+		
+		if (currentStatus == InvestmentStatus.REJECTED) {
+			throw new InvalidStatusTransitionException(
+			"Cannot update a REJECTED investment");
+		}
+		
+		if (newStatus == InvestmentStatus.COMPLETED
+		&& currentStatus != InvestmentStatus.APPROVED) {
+			throw new InvalidStatusTransitionException(
+			"Investment must be APPROVED before marking COMPLETED");
+		}
+		
+    }
+    
+}

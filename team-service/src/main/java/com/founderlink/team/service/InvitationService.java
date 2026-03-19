@@ -1,0 +1,32 @@
+package com.founderlink.team.service;
+
+import java.util.List;
+
+import com.founderlink.team.dto.request.InvitationRequestDto;
+import com.founderlink.team.dto.response.InvitationResponseDto;
+
+public interface InvitationService {
+
+    // Founder sends invitation
+    InvitationResponseDto sendInvitation(
+            Long founderId,
+            InvitationRequestDto requestDto);
+
+    // Founder cancels invitation
+    InvitationResponseDto cancelInvitation(
+            Long invitationId,
+            Long founderId);
+
+    // Co-founder rejects invitation
+    InvitationResponseDto rejectInvitation(
+            Long invitationId,
+            Long userId);
+
+    // Co-founder views all their invitations
+    List<InvitationResponseDto> getInvitationsByUserId(
+            Long userId);
+
+    // Get all invitations for a startup
+    List<InvitationResponseDto> getInvitationsByStartupId(
+            Long startupId);
+}
