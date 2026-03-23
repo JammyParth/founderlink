@@ -205,3 +205,16 @@ eureka:
 
 jwt:
   secret: FounderLinkSecretKeyForJWTTokenGeneration2024SecureKey
+
+
+logging:
+  level:
+    root: INFO
+    org.springframework.cloud.gateway: DEBUG
+    org.springframework.web.reactive: DEBUG
+    reactor.netty: INFO
+    com:
+      founderlink:
+        gateway: DEBUG
+  file:
+    name: logs/api-gateway.log
