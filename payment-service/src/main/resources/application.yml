@@ -6,6 +6,13 @@ spring:
     name: payment-service
   config:
     import: optional:configserver:http://config-server:8888
+
+eureka:
+  client:
+    service-url:
+      defaultZone: http://eureka-server:8761/eureka/
+  instance:
+    prefer-ip-address: true
 #   datasource:
 #     url: jdbc:mysql://localhost:3306/payment_db?createDatabaseIfNotExist=true
 #     username: root

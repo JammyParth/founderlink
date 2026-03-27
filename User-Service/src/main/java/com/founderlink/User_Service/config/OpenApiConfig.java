@@ -13,7 +13,7 @@ public class OpenApiConfig {
     @Bean
     public OpenAPI customOpenAPI() {
         return new OpenAPI()
-                .addServersItem(new Server().url("http://localhost:8090").description("API Gateway"))
+                .addServersItem(new Server().url("/").description("API Gateway"))
                 .addSecurityItem(new SecurityRequirement().addList("bearerAuth"))
                 .schemaRequirement("bearerAuth", new SecurityScheme()
                         .name("bearerAuth")
