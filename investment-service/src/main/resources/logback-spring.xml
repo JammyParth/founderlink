@@ -1,4 +1,4 @@
-<!-- <?xml version="1.0" encoding="UTF-8"?>
+<?xml version="1.0" encoding="UTF-8"?>
 <configuration>
 
     <!-- ── Console Appender (plain text for development) ── -->
@@ -8,28 +8,14 @@
         </encoder>
     </appender>
 
-    <!-- ── File Appender (structured JSON for Loki via Promtail) ── -->
-    <appender name="FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
-        <file>logs/investment-service.log</file>
-        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
-            <fileNamePattern>logs/investment-service.%d{yyyy-MM-dd}.log</fileNamePattern>
-            <maxHistory>7</maxHistory>
-        </rollingPolicy>
-        <encoder class="net.logstash.logback.encoder.LogstashEncoder">
-            <customFields>{"service":"investment-service"}</customFields>
-        </encoder>
-    </appender>
-
     <!-- ── Root Logger ── -->
     <root level="INFO">
         <appender-ref ref="CONSOLE"/>
-        <appender-ref ref="FILE"/>
     </root>
 
     <!-- ── Service specific logger ── -->
     <logger name="com.founderlink.investment" level="DEBUG" additivity="false">
         <appender-ref ref="CONSOLE"/>
-        <appender-ref ref="FILE"/>
     </logger>
 
-</configuration> -->
+</configuration>
