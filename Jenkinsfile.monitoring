@@ -42,6 +42,17 @@ pipeline {
             }
         }
 
+        stage('Debug Docker') {
+            steps {
+                sh """
+                which docker
+                docker --version
+                docker compose version
+                echo "PATH: $PATH"
+                """
+            }
+}
+
         stage('Deploy Monitoring Stack') {
             steps {
                 script {
