@@ -25,7 +25,7 @@ public class EventConsumer {
         this.emailService = emailService;
     }
 
-    @RabbitListener(queues = "startup.queue")
+    @RabbitListener(queues = "${rabbitmq.queue.startup}")
     @CircuitBreaker(name = "notificationService", fallbackMethod = "handleStartupCreatedFallback")
     @Retry(name = "notificationService")
     public void handleStartupCreated(Map<String, Object> event) {
@@ -51,7 +51,7 @@ public class EventConsumer {
                 event, throwable.getMessage());
     }
 
-    @RabbitListener(queues = "investment.queue")
+    @RabbitListener(queues = "${rabbitmq.queue.investment}")
     @CircuitBreaker(name = "notificationService", fallbackMethod = "handleInvestmentCreatedFallback")
     @Retry(name = "notificationService")
     public void handleInvestmentCreated(Map<String, Object> event) {
@@ -77,7 +77,7 @@ public class EventConsumer {
                 event, throwable.getMessage());
     }
 
-    @RabbitListener(queues = "team.queue")
+    @RabbitListener(queues = "${rabbitmq.queue.team}")
     @CircuitBreaker(name = "notificationService", fallbackMethod = "handleTeamInviteFallback")
     @Retry(name = "notificationService")
     public void handleTeamInvite(Map<String, Object> event) {
@@ -105,7 +105,7 @@ public class EventConsumer {
                 event, throwable.getMessage());
     }
 
-    @RabbitListener(queues = "messaging.queue")
+    @RabbitListener(queues = "${rabbitmq.queue.messaging}")
     @CircuitBreaker(name = "notificationService", fallbackMethod = "handleMessageSentFallback")
     @Retry(name = "notificationService")
     public void handleMessageSent(Map<String, Object> event) {
@@ -150,7 +150,7 @@ public class EventConsumer {
                 event.getEmail(), throwable.getMessage());
     }
 
-    @RabbitListener(queues = "team.accepted.queue")
+    @RabbitListener(queues = "${rabbitmq.queue.team-accepted}")
     @CircuitBreaker(name = "notificationService", fallbackMethod = "handleTeamMemberAcceptedFallback")
     @Retry(name = "notificationService")
     public void handleTeamMemberAccepted(TeamMemberAcceptedEvent event) {
@@ -174,7 +174,7 @@ public class EventConsumer {
                 event, throwable.getMessage());
     }
 
-    @RabbitListener(queues = "team.rejected.queue")
+    @RabbitListener(queues = "${rabbitmq.queue.team-rejected}")
     @CircuitBreaker(name = "notificationService", fallbackMethod = "handleTeamMemberRejectedFallback")
     @Retry(name = "notificationService")
     public void handleTeamMemberRejected(TeamMemberRejectedEvent event) {
@@ -198,7 +198,7 @@ public class EventConsumer {
                 event, throwable.getMessage());
     }
 
-    @RabbitListener(queues = "payment.completed.queue")
+    @RabbitListener(queues = "${rabbitmq.queue.payment-completed}")
     @CircuitBreaker(name = "notificationService", fallbackMethod = "handlePaymentCompletedFallback")
     @Retry(name = "notificationService")
     public void handlePaymentCompleted(PaymentCompletedEvent event) {
@@ -221,7 +221,7 @@ public class EventConsumer {
                 event, throwable.getMessage());
     }
 
-    @RabbitListener(queues = "payment.failed.queue")
+    @RabbitListener(queues = "${rabbitmq.queue.payment-failed}")
     @CircuitBreaker(name = "notificationService", fallbackMethod = "handlePaymentFailedFallback")
     @Retry(name = "notificationService")
     public void handlePaymentFailed(PaymentFailedEvent event) {
@@ -244,7 +244,7 @@ public class EventConsumer {
                 event, throwable.getMessage());
     }
 
-    @RabbitListener(queues = "investment.approved.queue")
+    @RabbitListener(queues = "${rabbitmq.queue.investment-approved}")
     @CircuitBreaker(name = "notificationService", fallbackMethod = "handleInvestmentApprovedFallback")
     @Retry(name = "notificationService")
     public void handleInvestmentApproved(InvestmentApprovedEvent event) {
@@ -268,7 +268,7 @@ public class EventConsumer {
                 event, throwable.getMessage());
     }
 
-    @RabbitListener(queues = "investment.rejected.queue")
+    @RabbitListener(queues = "${rabbitmq.queue.investment-rejected}")
     @CircuitBreaker(name = "notificationService", fallbackMethod = "handleInvestmentRejectedFallback")
     @Retry(name = "notificationService")
     public void handleInvestmentRejected(InvestmentRejectedEvent event) {

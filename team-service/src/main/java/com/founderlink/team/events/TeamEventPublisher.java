@@ -44,6 +44,7 @@ public class TeamEventPublisher {
             log.error("Failed to publish " +
                     "TEAM_INVITE_SENT: {}",
                     e.getMessage());
+            throw new IllegalStateException("Failed to publish TEAM_INVITE_SENT", e);
         }
     }
 
@@ -65,6 +66,7 @@ public class TeamEventPublisher {
             log.error("Failed to publish " +
                     "TEAM_MEMBER_ACCEPTED: {}",
                     e.getMessage());
+            throw new IllegalStateException("Failed to publish TEAM_MEMBER_ACCEPTED", e);
         }
     }
 
@@ -86,6 +88,7 @@ public class TeamEventPublisher {
             log.error("Failed to publish " +
                     "TEAM_MEMBER_REJECTED: {}",
                     e.getMessage());
+            throw new IllegalStateException("Failed to publish TEAM_MEMBER_REJECTED", e);
         }
     }
 }

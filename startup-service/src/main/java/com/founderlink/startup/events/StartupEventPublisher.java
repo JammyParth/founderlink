@@ -41,6 +41,7 @@ public class StartupEventPublisher {
             log.error("Failed to publish " +
                     "STARTUP_CREATED: {}",
                     e.getMessage());
+            throw new IllegalStateException("Failed to publish STARTUP_CREATED", e);
         }
     }
 
@@ -62,6 +63,7 @@ public class StartupEventPublisher {
             log.error("Failed to publish " +
                     "STARTUP_DELETED: {}",
                     e.getMessage());
+            throw new IllegalStateException("Failed to publish STARTUP_DELETED", e);
         }
     }
 }
