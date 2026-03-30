@@ -16,22 +16,22 @@ pipeline {
         DOCKER_REPO = 'founderlink'
         SERVICES = ''
         INFRA_SERVICES = ''
+        // FIX #3: Flag to skip downstream stages when no services detected
+        SKIP_BUILD = 'false'
     }
 
     stages {
 
-        stage('Cleanup') {
-            steps {
-                cleanWs()
-            }
-        }
+        // FIX #4: Removed top-level cleanWs() stage.
+        // post { always { cleanWs() } } already handles cleanup after every run.
+        // Keeping the workspace allows git fetch (fast) instead of full clone (slow),
+        // and crucially ensures HEAD~1 exists for the diff in Detect Changed Services.
 
         // Always checkout — docker-compose files are needed even during rollback
         stage('Checkout') {
             steps {
                 checkout scm
                 script {
-                    // Set COMMIT_TAG after checkout when GIT_COMMIT is available
                     def tag = sh(script: 'git rev-parse --short HEAD', returnStdout: true).trim()
                     if (!tag) {
                         error("Failed to determine commit tag — git rev-parse returned empty")
@@ -77,36 +77,58 @@ pipeline {
             }
             steps {
                 script {
+
+                    // FIX #1: Fetch enough history so HEAD~1 always exists on Jenkins.
+                    // A fresh checkout (or shallow clone) may only have HEAD.
+                    // --depth=2 fetches HEAD + its parent — exactly what HEAD~1 requires.
+                    sh "git fetch --depth=2 origin main || git fetch --depth=2 origin"
+
                     def changedFiles
-                    try {
+
+                    // Check if HEAD~1 actually exists before attempting the diff
+                    def parentExists = sh(
+                        script: "git rev-parse --verify HEAD~1 > /dev/null 2>&1",
+                        returnStatus: true
+                    ) == 0
+
+                    if (parentExists) {
+                        // FIX #1 (cont): Removed the broken fallback "|| git diff --name-only HEAD".
+                        // That compared working tree to index (always empty on clean checkout).
+                        // Now we only run the diff when we know HEAD~1 is available.
                         changedFiles = sh(
-                            script: "git diff --name-only HEAD~1 HEAD || git diff --name-only HEAD",
+                            script: "git diff --name-only HEAD~1 HEAD",
                             returnStdout: true
-                        ).trim().split("\n")
-                    } catch (Exception e) {
-                        echo "First commit or no previous commit found. Building all services."
+                        ).trim()
+                    } else {
+                        // True first commit — no parent exists, build everything
+                        echo "First commit detected. Building all services."
                         changedFiles = sh(
                             script: "git ls-files",
                             returnStdout: true
-                        ).trim().split("\n")
+                        ).trim()
                     }
+
+                    def fileList = changedFiles ? changedFiles.split("\n") : []
 
                     def services = [] as Set
                     def infraServices = [] as Set
 
-                    changedFiles.each { file ->
-                        if (file.startsWith("auth-service/")) services.add("auth-service")
-                        if (file.startsWith("user-service/")) services.add("user-service")
-                        if (file.startsWith("startup-service/")) services.add("startup-service")
-                        if (file.startsWith("investment-service/")) services.add("investment-service")
-                        if (file.startsWith("team-service/")) services.add("team-service")
-                        if (file.startsWith("messaging-service/")) services.add("messaging-service")
+                    fileList.each { file ->
+                        if (file.startsWith("auth-service/"))         services.add("auth-service")
+                        if (file.startsWith("user-service/"))         services.add("user-service")
+                        if (file.startsWith("startup-service/"))      services.add("startup-service")
+                        if (file.startsWith("investment-service/"))   services.add("investment-service")
+                        if (file.startsWith("team-service/"))         services.add("team-service")
+                        if (file.startsWith("messaging-service/"))    services.add("messaging-service")
                         if (file.startsWith("notification-service/")) services.add("notification-service")
-                        if (file.startsWith("payment-service/")) services.add("payment-service")
-                        if (file.startsWith("wallet-service/")) services.add("wallet-service")
-                        if (file.startsWith("api-gateway/")) services.add("api-gateway")
-                        if (file.startsWith("config-server/")) infraServices.add("config-server")
-                        if (file.startsWith("eureka-server/")) infraServices.add("eureka-server")
+                        if (file.startsWith("payment-service/"))      services.add("payment-service")
+                        if (file.startsWith("wallet-service/"))       services.add("wallet-service")
+                        if (file.startsWith("api-gateway/"))          services.add("api-gateway")
+                        if (file.startsWith("config-server/"))        infraServices.add("config-server")
+                        if (file.startsWith("eureka-server/"))        infraServices.add("eureka-server")
+                        // FIX #2: config-repo/ changes affect runtime config served by config-server.
+                        // Any change here must trigger a config-server redeploy so services pick up new values.
+                        if (file.startsWith("config-repo/"))          infraServices.add("config-server")
                     }
 
                     env.SERVICES = services.join(",")
@@ -114,7 +136,10 @@ pipeline {
 
                     if (!env.SERVICES && !env.INFRA_SERVICES) {
                         echo "No service changes detected. Skipping build."
-                        currentBuild.result = 'SUCCESS'
+                        // FIX #3: Set a flag instead of bare return.
+                        // A bare return only exits this script{} closure — all downstream
+                        // stages (Run Tests, Build Images, Push Images) would still execute.
+                        env.SKIP_BUILD = 'true'
                         return
                     }
 
@@ -126,7 +151,8 @@ pipeline {
 
         stage('Run Tests') {
             when {
-                expression { !params.ROLLBACK }
+                // FIX #3: Guard against running when nothing was detected
+                expression { !params.ROLLBACK && env.SKIP_BUILD != 'true' }
             }
             steps {
                 script {
@@ -166,7 +192,8 @@ pipeline {
 
         stage('Build Images') {
             when {
-                expression { !params.ROLLBACK }
+                // FIX #3: Guard against running when nothing was detected
+                expression { !params.ROLLBACK && env.SKIP_BUILD != 'true' }
             }
             steps {
                 script {
@@ -202,7 +229,13 @@ pipeline {
 
         stage('Push Images') {
             when {
-                expression { !params.ROLLBACK }
+                // FIX #3 + FIX #5: Skip entirely when no services detected or nothing to push.
+                // Previously docker login ran on every non-rollback build regardless.
+                expression {
+                    !params.ROLLBACK &&
+                    env.SKIP_BUILD != 'true' &&
+                    (env.SERVICES || env.INFRA_SERVICES)
+                }
             }
             steps {
                 withCredentials([usernamePassword(
@@ -317,7 +350,7 @@ pipeline {
 
         stage('Cleanup Old Images') {
             when {
-                expression { !params.ROLLBACK }
+                expression { !params.ROLLBACK && env.SKIP_BUILD != 'true' }
             }
             steps {
                 sh "docker image prune -f --filter 'until=72h'"
@@ -325,12 +358,13 @@ pipeline {
         }
     }
 
-    // Single merged post block
     post {
         success {
             script {
                 if (params.ROLLBACK) {
                     echo "✅ Rollback successful to tag: ${params.ROLLBACK_TAG}"
+                } else if (env.SKIP_BUILD == 'true') {
+                    echo "✅ Pipeline complete — no service changes detected, nothing deployed."
                 } else {
                     def deployed = []
                     if (env.SERVICES) deployed.add("App: ${env.SERVICES}")
