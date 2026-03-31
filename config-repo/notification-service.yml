@@ -16,13 +16,12 @@ spring:
     properties:
       mail:
         smtp:
-          auth: true
-          starttls:
-            enable: true
-            required: true
+          auth: ${MAIL_SMTP_AUTH:true}
           ssl:
             enable: ${MAIL_SSL_ENABLE:true}
-          auth: ${MAIL_SMTP_AUTH:true}
+          starttls:
+            enable: false
+
 
 resilience4j:
   circuitbreaker:
