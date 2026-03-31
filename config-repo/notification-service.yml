@@ -58,3 +58,4 @@ rabbitmq:
     payment-failed: notification.payment.failed.queue
     investment-approved: notification.investment.approved.queue
     investment-rejected: notification.investment.rejected.queue
+    user-registered: user-registered-queue

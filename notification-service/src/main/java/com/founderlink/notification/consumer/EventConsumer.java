@@ -292,4 +292,23 @@ public class EventConsumer {
         logger.error("Fallback: Failed to process INVESTMENT_REJECTED event: {}. Reason: {}",
                 event, throwable.getMessage());
     }
+
+    @RabbitListener(queues = "${rabbitmq.queue.user-registered}")
+    @CircuitBreaker(name = "notificationService", fallbackMethod = "handleUserRegisteredFallback")
+    @Retry(name = "notificationService")
+    public void handleUserRegistered(UserRegisteredEvent event) {
+        logger.info("Received USER_REGISTERED event: {}", event);
+
+        try {
+            emailService.sendWelcomeEmail(event.getEmail(), event.getName(), event.getRole());
+            logger.info("Welcome email sent to: {}", event.getEmail());
+        } catch (Exception e) {
+            logger.error("Error processing user registered event: {}", e.getMessage());
+        }
+    }
+
+    public void handleUserRegisteredFallback(UserRegisteredEvent event, Throwable throwable) {
+        logger.error("Fallback: Failed to send welcome email to {}. Reason: {}",
+                event.getEmail(), throwable.getMessage());
+    }
 }

@@ -46,6 +46,9 @@ public class RabbitMQConfig {
     @Value("${rabbitmq.queue.investment-rejected}")
     private String investmentRejectedQueue;
 
+    @Value("${rabbitmq.queue.user-registered}")
+    private String userRegisteredQueue;
+
     @Bean
     public DirectExchange exchange() {
         return new DirectExchange(exchange);
@@ -107,6 +110,11 @@ public class RabbitMQConfig {
     }
 
     @Bean
+    public Queue userRegisteredQueue() {
+        return new Queue(userRegisteredQueue, true);
+    }
+
+    @Bean
     public Binding startupBinding(Queue startupQueue, DirectExchange exchange) {
         return BindingBuilder.bind(startupQueue).to(exchange).with("startup.created");
     }
@@ -159,6 +167,11 @@ public class RabbitMQConfig {
     @Bean
     public Binding investmentRejectedBinding(Queue investmentRejectedQueue, DirectExchange exchange) {
         return BindingBuilder.bind(investmentRejectedQueue()).to(exchange).with("investment.rejected");
+    }
+
+    @Bean
+    public Binding userRegisteredBinding(Queue userRegisteredQueue, DirectExchange exchange) {
+        return BindingBuilder.bind(userRegisteredQueue()).to(exchange).with("user.registered");
     }
 
     @Bean

@@ -136,4 +136,22 @@ public class EmailService {
         );
         sendEmail(investorEmail, subject, body);
     }
+
+    public void sendWelcomeEmail(String to, String userName, String role) {
+        String subject = "🎉 Welcome to FounderLink!";
+        String body = String.format(
+                "Hello %s,\n\n" +
+                "Welcome to FounderLink! We're excited to have you join our community as a %s.\n\n" +
+                "FounderLink connects founders, investors, and co-founders to build amazing startups together.\n\n" +
+                "Get started by:\n" +
+                "- Completing your profile\n" +
+                "- Exploring opportunities\n" +
+                "- Connecting with like-minded individuals\n\n" +
+                "If you have any questions, feel free to reach out to our support team.\n\n" +
+                "Best regards,\n" +
+                "FounderLink Team",
+                userName, role
+        );
+        sendEmail(to, subject, body);
+    }
 }
