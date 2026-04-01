@@ -330,7 +330,7 @@ pipeline {
                         sh """
                         export TAG=${env.COMMIT_TAG}
                         docker compose -f docker-compose.infra.yml pull ${svc} || true
-                        docker compose -f docker-compose.infra.yml up -d --no-deps ${svc}
+                        docker compose -f docker-compose.infra.yml up -d --no-deps --force-recreate ${svc}
                         """
                     }
                 }
@@ -348,7 +348,7 @@ pipeline {
                         sh """
                         export TAG=${env.COMMIT_TAG}
                         docker compose -f docker-compose.services.yml pull ${svc} || true
-                        docker compose -f docker-compose.services.yml up -d --no-deps ${svc}
+                        docker compose -f docker-compose.services.yml up -d --no-deps --force-recreate ${svc}
                         """
                     }
                 }
