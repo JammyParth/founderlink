@@ -2,6 +2,7 @@ version: "3.9"
 
 networks:
   founderlink-internal:
+    external: true
   proxy-net:
     external: true
 

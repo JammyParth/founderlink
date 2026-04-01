@@ -254,7 +254,6 @@ pipeline {
                         docker build \\
                         --cache-from ${DOCKER_REPO}/${svc}:cache \\
                         -t ${DOCKER_REPO}/${svc}:${env.COMMIT_TAG} \\
-                        -t ${DOCKER_REPO}/${svc}:cache \\
                         ./${svc}
                         """
                     }
@@ -289,16 +288,25 @@ pipeline {
 
                         if (allServices.isEmpty()) { echo "No services to push"; return }
 
-                        def parallelStages = [:]
+                        // Step 1: Push commit tags in parallel (fast)
+                        echo "📤 Pushing commit-tagged images in parallel..."
+                        def parallelPushes = [:]
                         allServices.each { svc ->
-                            parallelStages["Push ${svc}"] = {
-                                sh """
-                                docker push ${DOCKER_REPO}/${svc}:${env.COMMIT_TAG}
-                                docker push ${DOCKER_REPO}/${svc}:cache
-                                """
+                            parallelPushes["Push ${svc}:${env.COMMIT_TAG}"] = {
+                                sh "docker push ${DOCKER_REPO}/${svc}:${env.COMMIT_TAG}"
                             }
                         }
-                        parallel parallelStages
+                        parallel parallelPushes
+
+                        // Step 2: Update cache tags sequentially (safe)
+                        echo "🔄 Updating cache tags sequentially..."
+                        allServices.each { svc ->
+                            sh """
+                            docker tag ${DOCKER_REPO}/${svc}:${env.COMMIT_TAG} ${DOCKER_REPO}/${svc}:cache
+                            docker push ${DOCKER_REPO}/${svc}:cache
+                            echo "✅ Cache updated for ${svc}"
+                            """
+                        }
                     }
                 }
             }
