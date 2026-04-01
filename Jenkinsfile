@@ -187,11 +187,11 @@ pipeline {
             when {
                 expression {
                     !params.ROLLBACK &&
+                    !params.FORCE_BUILD &&
                     fileExists(env.SKIP_FILE) &&
                     readFile(env.SKIP_FILE).trim() != 'true' &&
-                    (params.FORCE_BUILD ||
-                     (fileExists(env.SERVICES_FILE) && readFile(env.SERVICES_FILE).trim()) ||
-                     (fileExists(env.INFRA_FILE)    && readFile(env.INFRA_FILE).trim()))
+                    (fileExists(env.SERVICES_FILE) && readFile(env.SERVICES_FILE).trim()) ||
+                    (fileExists(env.INFRA_FILE)    && readFile(env.INFRA_FILE).trim())
                 }
             }
             steps {
@@ -204,22 +204,20 @@ pipeline {
 
                     if (allServices.isEmpty()) { echo "No services to test"; return }
 
-                    def parallelStages = [:]
+                    // Run sequentially — parallel Spring Boot context startups OOM-killed the VM.
+                    // Each Spring Boot test context needs ~300-500MB RAM. Running 12 at once = crash.
                     allServices.each { svc ->
-                        parallelStages["Test ${svc}"] = {
-                            echo "Testing ${svc}"
-                            sh """
-                            if [ -f "./${svc}/mvnw" ]; then
-                                cd ${svc} && chmod +x mvnw && ./mvnw test || echo "Tests failed for ${svc}, continuing..."
-                            elif [ -f "./${svc}/pom.xml" ]; then
-                                cd ${svc} && mvn test || echo "Tests failed for ${svc}, continuing..."
-                            else
-                                echo "No test configuration found for ${svc}, skipping tests"
-                            fi
-                            """
-                        }
+                        echo "Testing ${svc}"
+                        sh """
+                        if [ -f "./${svc}/mvnw" ]; then
+                            cd ${svc} && chmod +x mvnw && ./mvnw test || echo "Tests failed for ${svc}, continuing..."
+                        elif [ -f "./${svc}/pom.xml" ]; then
+                            cd ${svc} && mvn test || echo "Tests failed for ${svc}, continuing..."
+                        else
+                            echo "No test configuration found for ${svc}, skipping tests"
+                        fi
+                        """
                     }
-                    parallel parallelStages
                 }
             }
         }
