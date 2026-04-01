@@ -2,9 +2,9 @@ pipeline {
     agent any
 
     parameters {
-        booleanParam(name: 'ROLLBACK', defaultValue: false, description: 'Enable rollback mode')
-        string(name: 'ROLLBACK_TAG', defaultValue: '', description: 'Docker image tag to rollback to (only used when ROLLBACK=true)')
-        booleanParam(name: 'FORCE_BUILD', defaultValue: false, description: 'Force rebuild and redeploy ALL services regardless of what changed')
+        booleanParam(name: 'ROLLBACK',     defaultValue: false, description: 'Enable rollback mode')
+        string(name:  'ROLLBACK_TAG',      defaultValue: '',    description: 'Docker image tag to rollback to (only used when ROLLBACK=true)')
+        booleanParam(name: 'FORCE_BUILD',  defaultValue: false, description: 'Force rebuild and redeploy ALL services regardless of what changed')
     }
 
     options {
@@ -15,10 +15,14 @@ pipeline {
     environment {
         DOCKERHUB_CREDENTIALS = 'dockerhub-creds'
         DOCKER_REPO           = 'founderlink'
-        SERVICES              = ''
-        INFRA_SERVICES        = ''
-        RESTART_SERVICES      = ''
-        SKIP_BUILD            = 'false'
+        // Service lists are written to workspace files by Detect/Rollback stages
+        // and read back by every downstream stage. This permanently avoids Jenkins
+        // CPS env var propagation bugs where env vars set inside script{} blocks
+        // are null when read in subsequent stage bodies or when{} expressions.
+        SERVICES_FILE         = '.pipeline_services'
+        INFRA_FILE            = '.pipeline_infra'
+        RESTART_FILE          = '.pipeline_restart'
+        SKIP_FILE             = '.pipeline_skip'
     }
 
     stages {
@@ -42,15 +46,18 @@ pipeline {
                     if (!params.ROLLBACK_TAG) error("ROLLBACK_TAG parameter is required when ROLLBACK=true")
 
                     echo "🔄 ROLLBACK MODE ENABLED — Target tag: ${params.ROLLBACK_TAG}"
+                    env.COMMIT_TAG = params.ROLLBACK_TAG
 
-                    env.SERVICES       = ['auth-service','user-service','startup-service','investment-service',
-                                          'team-service','messaging-service','notification-service',
-                                          'payment-service','wallet-service','api-gateway'].join(",")
-                    env.INFRA_SERVICES = ['config-server','eureka-server'].join(",")
-                    env.COMMIT_TAG     = params.ROLLBACK_TAG
+                    def appServices   = 'auth-service,user-service,startup-service,investment-service,team-service,messaging-service,notification-service,payment-service,wallet-service,api-gateway'
+                    def infraServices = 'config-server,eureka-server'
 
-                    echo "Rolling back application services:    ${env.SERVICES}"
-                    echo "Rolling back infrastructure services: ${env.INFRA_SERVICES}"
+                    writeFile file: env.SERVICES_FILE, text: appServices
+                    writeFile file: env.INFRA_FILE,    text: infraServices
+                    writeFile file: env.RESTART_FILE,  text: ''
+                    writeFile file: env.SKIP_FILE,     text: 'false'
+
+                    echo "Rolling back application services:    ${appServices}"
+                    echo "Rolling back infrastructure services: ${infraServices}"
                 }
             }
         }
@@ -62,13 +69,10 @@ pipeline {
 
                     if (params.FORCE_BUILD) {
                         echo "⚡ FORCE_BUILD enabled — rebuilding all services"
-                        env.SERVICES       = ['auth-service','user-service','startup-service','investment-service',
-                                              'team-service','messaging-service','notification-service',
-                                              'payment-service','wallet-service','api-gateway'].join(",")
-                        env.INFRA_SERVICES = ['config-server','eureka-server'].join(",")
-                        env.SKIP_BUILD     = 'false'
-                        // Do NOT return early — let the script block complete so env vars
-                        // are fully committed before downstream when{} expressions evaluate.
+                        writeFile file: env.SERVICES_FILE, text: 'auth-service,user-service,startup-service,investment-service,team-service,messaging-service,notification-service,payment-service,wallet-service,api-gateway'
+                        writeFile file: env.INFRA_FILE,    text: 'config-server,eureka-server'
+                        writeFile file: env.RESTART_FILE,  text: ''
+                        writeFile file: env.SKIP_FILE,     text: 'false'
 
                     } else {
 
@@ -107,84 +111,98 @@ pipeline {
 
                         } else {
                             echo "No new commits since last build (same SHA: ${env.GIT_COMMIT}). Skipping build."
-                            env.SKIP_BUILD = 'true'
+                            writeFile file: env.SERVICES_FILE, text: ''
+                            writeFile file: env.INFRA_FILE,    text: ''
+                            writeFile file: env.RESTART_FILE,  text: ''
+                            writeFile file: env.SKIP_FILE,     text: 'true'
+                            return
                         }
 
-                        if (env.SKIP_BUILD != 'true') {
-                            def fileList = changedFiles
-                                ? changedFiles.split("\n").collect { it.trim() }.findAll { it }
-                                : []
+                        def fileList = changedFiles
+                            ? changedFiles.split("\n").collect { it.trim() }.findAll { it }
+                            : []
 
-                            echo "Parsed ${fileList.size()} changed file(s)"
+                        echo "Parsed ${fileList.size()} changed file(s)"
 
-                            def services        = [] as Set
-                            def infraServices   = [] as Set
-                            def restartServices = [] as Set
+                        def services        = [] as Set
+                        def infraServices   = [] as Set
+                        def restartServices = [] as Set
 
-                            fileList.each { file ->
-                                if (file.startsWith("frontend/"))              return
-
-                                if (file.startsWith("auth-service/"))         services.add("auth-service")
-                                if (file.startsWith("user-service/"))         services.add("user-service")
-                                if (file.startsWith("startup-service/"))      services.add("startup-service")
-                                if (file.startsWith("investment-service/"))   services.add("investment-service")
-                                if (file.startsWith("team-service/"))         services.add("team-service")
-                                if (file.startsWith("messaging-service/"))    services.add("messaging-service")
-                                if (file.startsWith("notification-service/")) services.add("notification-service")
-                                if (file.startsWith("payment-service/"))      services.add("payment-service")
-                                if (file.startsWith("wallet-service/"))       services.add("wallet-service")
-                                if (file.startsWith("api-gateway/"))          services.add("api-gateway")
-                                if (file.startsWith("config-server/"))        infraServices.add("config-server")
-                                if (file.startsWith("eureka-server/"))        infraServices.add("eureka-server")
-                                if (file.startsWith("config-repo/"))          restartServices.add("config-server")
-                            }
-
-                            env.SERVICES         = services.join(",")
-                            env.INFRA_SERVICES   = infraServices.join(",")
-                            env.RESTART_SERVICES = restartServices.join(",")
-
-                            if (!env.SERVICES && !env.INFRA_SERVICES && !env.RESTART_SERVICES) {
-                                def nonServiceFiles = fileList.findAll { f ->
-                                    String fs = f.toString()
-                                    !fs.startsWith("frontend/") &&
-                                    !fs.startsWith("auth-service/") &&
-                                    !fs.startsWith("user-service/") &&
-                                    !fs.startsWith("startup-service/") &&
-                                    !fs.startsWith("investment-service/") &&
-                                    !fs.startsWith("team-service/") &&
-                                    !fs.startsWith("messaging-service/") &&
-                                    !fs.startsWith("notification-service/") &&
-                                    !fs.startsWith("payment-service/") &&
-                                    !fs.startsWith("wallet-service/") &&
-                                    !fs.startsWith("api-gateway/") &&
-                                    !fs.startsWith("config-server/") &&
-                                    !fs.startsWith("eureka-server/") &&
-                                    !fs.startsWith("config-repo/")
-                                }
-                                echo "No backend service changes detected. Skipping build."
-                                echo "Non-service files changed (${nonServiceFiles.size()}): ${nonServiceFiles.take(5).join(', ')}${nonServiceFiles.size() > 5 ? ' ...' : ''}"
-                                env.SKIP_BUILD = 'true'
-                            } else {
-                                if (env.SERVICES)         echo "Changed application services:    ${env.SERVICES}"
-                                if (env.INFRA_SERVICES)   echo "Changed infrastructure services: ${env.INFRA_SERVICES}"
-                                if (env.RESTART_SERVICES) echo "Config-repo changes — will restart: ${env.RESTART_SERVICES}"
-                            }
+                        fileList.each { file ->
+                            if (file.startsWith("frontend/"))              return
+                            if (file.startsWith("auth-service/"))         services.add("auth-service")
+                            if (file.startsWith("user-service/"))         services.add("user-service")
+                            if (file.startsWith("startup-service/"))      services.add("startup-service")
+                            if (file.startsWith("investment-service/"))   services.add("investment-service")
+                            if (file.startsWith("team-service/"))         services.add("team-service")
+                            if (file.startsWith("messaging-service/"))    services.add("messaging-service")
+                            if (file.startsWith("notification-service/")) services.add("notification-service")
+                            if (file.startsWith("payment-service/"))      services.add("payment-service")
+                            if (file.startsWith("wallet-service/"))       services.add("wallet-service")
+                            if (file.startsWith("api-gateway/"))          services.add("api-gateway")
+                            if (file.startsWith("config-server/"))        infraServices.add("config-server")
+                            if (file.startsWith("eureka-server/"))        infraServices.add("eureka-server")
+                            if (file.startsWith("config-repo/"))          restartServices.add("config-server")
                         }
 
-                    } // end else (normal diff path)
+                        if (!services && !infraServices && !restartServices) {
+                            def nonServiceFiles = fileList.findAll { f ->
+                                String fs = f.toString()
+                                !fs.startsWith("frontend/") &&
+                                !fs.startsWith("auth-service/") &&
+                                !fs.startsWith("user-service/") &&
+                                !fs.startsWith("startup-service/") &&
+                                !fs.startsWith("investment-service/") &&
+                                !fs.startsWith("team-service/") &&
+                                !fs.startsWith("messaging-service/") &&
+                                !fs.startsWith("notification-service/") &&
+                                !fs.startsWith("payment-service/") &&
+                                !fs.startsWith("wallet-service/") &&
+                                !fs.startsWith("api-gateway/") &&
+                                !fs.startsWith("config-server/") &&
+                                !fs.startsWith("eureka-server/") &&
+                                !fs.startsWith("config-repo/")
+                            }
+                            echo "No backend service changes detected. Skipping build."
+                            echo "Non-service files changed (${nonServiceFiles.size()}): ${nonServiceFiles.take(5).join(', ')}${nonServiceFiles.size() > 5 ? ' ...' : ''}"
+                            writeFile file: env.SERVICES_FILE, text: ''
+                            writeFile file: env.INFRA_FILE,    text: ''
+                            writeFile file: env.RESTART_FILE,  text: ''
+                            writeFile file: env.SKIP_FILE,     text: 'true'
+                        } else {
+                            writeFile file: env.SERVICES_FILE, text: services.join(",")
+                            writeFile file: env.INFRA_FILE,    text: infraServices.join(",")
+                            writeFile file: env.RESTART_FILE,  text: restartServices.join(",")
+                            writeFile file: env.SKIP_FILE,     text: 'false'
+                            if (services)        echo "Changed application services:    ${services.join(',')}"
+                            if (infraServices)   echo "Changed infrastructure services: ${infraServices.join(',')}"
+                            if (restartServices) echo "Config-repo changes — will restart: ${restartServices.join(',')}"
+                        }
+                    }
                 }
             }
         }
 
         stage('Run Tests') {
             when {
-                expression { !params.ROLLBACK && env.SKIP_BUILD != 'true' && (params.FORCE_BUILD || env.SERVICES || env.INFRA_SERVICES) }
+                expression {
+                    !params.ROLLBACK &&
+                    fileExists(env.SKIP_FILE) &&
+                    readFile(env.SKIP_FILE).trim() != 'true' &&
+                    (params.FORCE_BUILD ||
+                     (fileExists(env.SERVICES_FILE) && readFile(env.SERVICES_FILE).trim()) ||
+                     (fileExists(env.INFRA_FILE)    && readFile(env.INFRA_FILE).trim()))
+                }
             }
             steps {
                 script {
+                    def svcList   = fileExists(env.SERVICES_FILE) ? readFile(env.SERVICES_FILE).trim() : ''
+                    def infraList = fileExists(env.INFRA_FILE)    ? readFile(env.INFRA_FILE).trim()    : ''
                     def allServices = []
-                    if (env.SERVICES)       allServices.addAll(env.SERVICES.split(",").findAll { it })
-                    if (env.INFRA_SERVICES) allServices.addAll(env.INFRA_SERVICES.split(",").findAll { it })
+                    if (svcList)   allServices.addAll(svcList.split(",").findAll { it })
+                    if (infraList) allServices.addAll(infraList.split(",").findAll { it })
+
+                    if (allServices.isEmpty()) { echo "No services to test"; return }
 
                     def parallelStages = [:]
                     allServices.each { svc ->
@@ -192,46 +210,47 @@ pipeline {
                             echo "Testing ${svc}"
                             sh """
                             if [ -f "./${svc}/mvnw" ]; then
-                                cd ${svc}
-                                chmod +x mvnw
-                                ./mvnw test || echo "Tests failed for ${svc}, continuing..."
+                                cd ${svc} && chmod +x mvnw && ./mvnw test || echo "Tests failed for ${svc}, continuing..."
                             elif [ -f "./${svc}/pom.xml" ]; then
-                                cd ${svc}
-                                mvn test || echo "Tests failed for ${svc}, continuing..."
+                                cd ${svc} && mvn test || echo "Tests failed for ${svc}, continuing..."
                             else
                                 echo "No test configuration found for ${svc}, skipping tests"
                             fi
                             """
                         }
                     }
-
-                    if (parallelStages.isEmpty()) {
-                        echo "No services to test"
-                    } else {
-                        parallel parallelStages
-                    }
+                    parallel parallelStages
                 }
             }
         }
 
         stage('Build Images') {
             when {
-                expression { !params.ROLLBACK && env.SKIP_BUILD != 'true' && (params.FORCE_BUILD || env.SERVICES || env.INFRA_SERVICES) }
+                expression {
+                    !params.ROLLBACK &&
+                    fileExists(env.SKIP_FILE) &&
+                    readFile(env.SKIP_FILE).trim() != 'true' &&
+                    (params.FORCE_BUILD ||
+                     (fileExists(env.SERVICES_FILE) && readFile(env.SERVICES_FILE).trim()) ||
+                     (fileExists(env.INFRA_FILE)    && readFile(env.INFRA_FILE).trim()))
+                }
             }
             steps {
                 script {
+                    def svcList   = fileExists(env.SERVICES_FILE) ? readFile(env.SERVICES_FILE).trim() : ''
+                    def infraList = fileExists(env.INFRA_FILE)    ? readFile(env.INFRA_FILE).trim()    : ''
                     def allServices = []
-                    if (env.SERVICES)       allServices.addAll(env.SERVICES.split(",").findAll { it })
-                    if (env.INFRA_SERVICES) allServices.addAll(env.INFRA_SERVICES.split(",").findAll { it })
+                    if (svcList)   allServices.addAll(svcList.split(",").findAll { it })
+                    if (infraList) allServices.addAll(infraList.split(",").findAll { it })
+
+                    if (allServices.isEmpty()) { echo "No services to build"; return }
 
                     def parallelStages = [:]
                     allServices.each { svc ->
                         parallelStages["Build ${svc}"] = {
                             echo "Building ${svc}"
                             sh """
-                            echo "Pulling cache image for ${svc}..."
                             docker pull ${DOCKER_REPO}/${svc}:cache || true
-
                             docker build \\
                               --cache-from ${DOCKER_REPO}/${svc}:cache \\
                               -t ${DOCKER_REPO}/${svc}:${env.COMMIT_TAG} \\
@@ -240,12 +259,7 @@ pipeline {
                             """
                         }
                     }
-
-                    if (parallelStages.isEmpty()) {
-                        echo "No services to build"
-                    } else {
-                        parallel parallelStages
-                    }
+                    parallel parallelStages
                 }
             }
         }
@@ -254,8 +268,11 @@ pipeline {
             when {
                 expression {
                     !params.ROLLBACK &&
-                    env.SKIP_BUILD != 'true' &&
-                    (params.FORCE_BUILD || env.SERVICES || env.INFRA_SERVICES)
+                    fileExists(env.SKIP_FILE) &&
+                    readFile(env.SKIP_FILE).trim() != 'true' &&
+                    (params.FORCE_BUILD ||
+                     (fileExists(env.SERVICES_FILE) && readFile(env.SERVICES_FILE).trim()) ||
+                     (fileExists(env.INFRA_FILE)    && readFile(env.INFRA_FILE).trim()))
                 }
             }
             steps {
@@ -265,11 +282,14 @@ pipeline {
                     passwordVariable: 'DOCKER_PASS'
                 )]) {
                     sh 'echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin'
-
                     script {
+                        def svcList   = fileExists(env.SERVICES_FILE) ? readFile(env.SERVICES_FILE).trim() : ''
+                        def infraList = fileExists(env.INFRA_FILE)    ? readFile(env.INFRA_FILE).trim()    : ''
                         def allServices = []
-                        if (env.SERVICES)       allServices.addAll(env.SERVICES.split(",").findAll { it })
-                        if (env.INFRA_SERVICES) allServices.addAll(env.INFRA_SERVICES.split(",").findAll { it })
+                        if (svcList)   allServices.addAll(svcList.split(",").findAll { it })
+                        if (infraList) allServices.addAll(infraList.split(",").findAll { it })
+
+                        if (allServices.isEmpty()) { echo "No services to push"; return }
 
                         def parallelStages = [:]
                         allServices.each { svc ->
@@ -280,12 +300,7 @@ pipeline {
                                 """
                             }
                         }
-
-                        if (parallelStages.isEmpty()) {
-                            echo "No services to push"
-                        } else {
-                            parallel parallelStages
-                        }
+                        parallel parallelStages
                     }
                 }
             }
@@ -308,11 +323,11 @@ pipeline {
 
         stage('Deploy Infrastructure Services') {
             when {
-                expression { params.FORCE_BUILD || (env.INFRA_SERVICES != null && env.INFRA_SERVICES != "") }
+                expression { fileExists(env.INFRA_FILE) && readFile(env.INFRA_FILE).trim() != '' }
             }
             steps {
                 script {
-                    env.INFRA_SERVICES.split(",").each { svc ->
+                    readFile(env.INFRA_FILE).trim().split(",").findAll { it }.each { svc ->
                         echo "Deploying infrastructure service: ${svc}"
                         sh """
                         export TAG=${env.COMMIT_TAG}
@@ -326,11 +341,11 @@ pipeline {
 
         stage('Deploy Application Services') {
             when {
-                expression { params.FORCE_BUILD || (env.SERVICES != null && env.SERVICES != "") }
+                expression { fileExists(env.SERVICES_FILE) && readFile(env.SERVICES_FILE).trim() != '' }
             }
             steps {
                 script {
-                    env.SERVICES.split(",").each { svc ->
+                    readFile(env.SERVICES_FILE).trim().split(",").findAll { it }.each { svc ->
                         echo "Deploying application service: ${svc}"
                         sh """
                         export TAG=${env.COMMIT_TAG}
@@ -344,11 +359,11 @@ pipeline {
 
         stage('Restart Config Services') {
             when {
-                expression { env.RESTART_SERVICES != null && env.RESTART_SERVICES != "" }
+                expression { fileExists(env.RESTART_FILE) && readFile(env.RESTART_FILE).trim() != '' }
             }
             steps {
                 script {
-                    env.RESTART_SERVICES.split(",").each { svc ->
+                    readFile(env.RESTART_FILE).trim().split(",").findAll { it }.each { svc ->
                         echo "Restarting ${svc} to pick up config-repo changes..."
                         sh "docker compose -f docker-compose.infra.yml restart ${svc}"
                     }
@@ -359,12 +374,14 @@ pipeline {
         stage('Health Check') {
             steps {
                 script {
-                    def allServices = []
-                    if (env.SERVICES)         allServices.addAll(env.SERVICES.split(",").findAll { it })
-                    if (env.INFRA_SERVICES)   allServices.addAll(env.INFRA_SERVICES.split(",").findAll { it })
-                    if (env.RESTART_SERVICES) allServices.addAll(env.RESTART_SERVICES.split(",").findAll { it })
+                    def svcList     = fileExists(env.SERVICES_FILE) ? readFile(env.SERVICES_FILE).trim() : ''
+                    def infraList   = fileExists(env.INFRA_FILE)    ? readFile(env.INFRA_FILE).trim()    : ''
+                    def restartList = fileExists(env.RESTART_FILE)  ? readFile(env.RESTART_FILE).trim()  : ''
 
-                    allServices = allServices.unique()
+                    def allServices = [] as Set
+                    if (svcList)     allServices.addAll(svcList.split(",").findAll { it })
+                    if (infraList)   allServices.addAll(infraList.split(",").findAll { it })
+                    if (restartList) allServices.addAll(restartList.split(",").findAll { it })
 
                     if (allServices.isEmpty()) {
                         echo "No services deployed — skipping health check."
@@ -391,7 +408,11 @@ pipeline {
 
         stage('Cleanup Old Images') {
             when {
-                expression { !params.ROLLBACK && env.SKIP_BUILD != 'true' }
+                expression {
+                    !params.ROLLBACK &&
+                    fileExists(env.SKIP_FILE) &&
+                    readFile(env.SKIP_FILE).trim() != 'true'
+                }
             }
             steps {
                 sh "docker image prune -f --filter 'until=72h'"
@@ -404,13 +425,16 @@ pipeline {
             script {
                 if (params.ROLLBACK) {
                     echo "✅ Rollback successful to tag: ${params.ROLLBACK_TAG}"
-                } else if (env.SKIP_BUILD == 'true') {
+                } else if (fileExists(env.SKIP_FILE) && readFile(env.SKIP_FILE).trim() == 'true') {
                     echo "✅ Pipeline complete — no backend service changes, nothing deployed."
                 } else {
+                    def svcList     = fileExists(env.SERVICES_FILE) ? readFile(env.SERVICES_FILE).trim() : ''
+                    def infraList   = fileExists(env.INFRA_FILE)    ? readFile(env.INFRA_FILE).trim()    : ''
+                    def restartList = fileExists(env.RESTART_FILE)  ? readFile(env.RESTART_FILE).trim()  : ''
                     def deployed = []
-                    if (env.SERVICES)         deployed.add("App: ${env.SERVICES}")
-                    if (env.INFRA_SERVICES)   deployed.add("Infra: ${env.INFRA_SERVICES}")
-                    if (env.RESTART_SERVICES) deployed.add("Restarted: ${env.RESTART_SERVICES}")
+                    if (svcList)     deployed.add("App: ${svcList}")
+                    if (infraList)   deployed.add("Infra: ${infraList}")
+                    if (restartList) deployed.add("Restarted: ${restartList}")
                     echo "✅ Deployment successful for ${deployed.join(' | ')}"
                     echo "Tag: ${env.COMMIT_TAG}"
                 }
