@@ -60,112 +60,118 @@ pipeline {
             steps {
                 script {
 
-                    def changedFiles = ""
                     if (params.FORCE_BUILD) {
                         echo "⚡ FORCE_BUILD enabled — rebuilding all services"
                         env.SERVICES       = ['auth-service','user-service','startup-service','investment-service',
                                               'team-service','messaging-service','notification-service',
                                               'payment-service','wallet-service','api-gateway'].join(",")
                         env.INFRA_SERVICES = ['config-server','eureka-server'].join(",")
-                        return
-                    }
-                    def prevCommit = env.GIT_PREVIOUS_SUCCESSFUL_COMMIT?.trim() \
-                                  ?: env.GIT_PREVIOUS_COMMIT?.trim()
-
-                    if (prevCommit && prevCommit != env.GIT_COMMIT?.trim()) {
-                        echo "Previous commit: ${prevCommit}"
-                        echo "Current  commit: ${env.GIT_COMMIT}"
-
-                        def fetchStatus = sh(
-                            script: "git fetch --no-tags origin ${prevCommit} 2>&1",
-                            returnStatus: true
-                        )
-
-                        if (fetchStatus == 0) {
-                            changedFiles = sh(
-                                script: "git diff --name-only FETCH_HEAD HEAD",
-                                returnStdout: true
-                            ).trim()
-                            echo "Diff: ${prevCommit} (FETCH_HEAD) → HEAD"
-                            if (changedFiles) {
-                                echo "Raw changed files:\n${changedFiles}"
-                            } else {
-                                echo "Raw changed files: (empty — diff returned nothing)"
-                            }
-                        } else {
-                            echo "WARNING: Could not fetch previous commit ${prevCommit}. Treating as full rebuild."
-                            changedFiles = sh(script: "git ls-files", returnStdout: true).trim()
-                        }
-
-                    } else if (!prevCommit) {
-                        echo "No previous commit found. First build — treating all files as changed."
-                        changedFiles = sh(script: "git ls-files", returnStdout: true).trim()
+                        env.SKIP_BUILD     = 'false'
+                        // Do NOT return early — let the script block complete so env vars
+                        // are fully committed before downstream when{} expressions evaluate.
 
                     } else {
-                        echo "No new commits since last build (same SHA: ${env.GIT_COMMIT}). Skipping build."
-                        env.SKIP_BUILD = 'true'
-                    }
 
-                    if (env.SKIP_BUILD != 'true') {
-                        def fileList = changedFiles
-                            ? changedFiles.split("\n").collect { it.trim() }.findAll { it }
-                            : []
+                        def changedFiles = ""
+                        def prevCommit = env.GIT_PREVIOUS_SUCCESSFUL_COMMIT?.trim() \
+                                      ?: env.GIT_PREVIOUS_COMMIT?.trim()
 
-                        echo "Parsed ${fileList.size()} changed file(s)"
+                        if (prevCommit && prevCommit != env.GIT_COMMIT?.trim()) {
+                            echo "Previous commit: ${prevCommit}"
+                            echo "Current  commit: ${env.GIT_COMMIT}"
 
-                        def services        = [] as Set
-                        def infraServices   = [] as Set
-                        def restartServices = [] as Set
+                            def fetchStatus = sh(
+                                script: "git fetch --no-tags origin ${prevCommit} 2>&1",
+                                returnStatus: true
+                            )
 
-                        fileList.each { file ->
-                            if (file.startsWith("frontend/"))              return
-
-                            if (file.startsWith("auth-service/"))         services.add("auth-service")
-                            if (file.startsWith("user-service/"))         services.add("user-service")
-                            if (file.startsWith("startup-service/"))      services.add("startup-service")
-                            if (file.startsWith("investment-service/"))   services.add("investment-service")
-                            if (file.startsWith("team-service/"))         services.add("team-service")
-                            if (file.startsWith("messaging-service/"))    services.add("messaging-service")
-                            if (file.startsWith("notification-service/")) services.add("notification-service")
-                            if (file.startsWith("payment-service/"))      services.add("payment-service")
-                            if (file.startsWith("wallet-service/"))       services.add("wallet-service")
-                            if (file.startsWith("api-gateway/"))          services.add("api-gateway")
-                            if (file.startsWith("config-server/"))        infraServices.add("config-server")
-                            if (file.startsWith("eureka-server/"))        infraServices.add("eureka-server")
-                            if (file.startsWith("config-repo/"))          restartServices.add("config-server")
-                        }
-
-                        env.SERVICES         = services.join(",")
-                        env.INFRA_SERVICES   = infraServices.join(",")
-                        env.RESTART_SERVICES = restartServices.join(",")
-
-                        if (!env.SERVICES && !env.INFRA_SERVICES && !env.RESTART_SERVICES) {
-                            def nonServiceFiles = fileList.findAll { f ->
-                                String fs = f.toString()
-                                !fs.startsWith("frontend/") &&
-                                !fs.startsWith("auth-service/") &&
-                                !fs.startsWith("user-service/") &&
-                                !fs.startsWith("startup-service/") &&
-                                !fs.startsWith("investment-service/") &&
-                                !fs.startsWith("team-service/") &&
-                                !fs.startsWith("messaging-service/") &&
-                                !fs.startsWith("notification-service/") &&
-                                !fs.startsWith("payment-service/") &&
-                                !fs.startsWith("wallet-service/") &&
-                                !fs.startsWith("api-gateway/") &&
-                                !fs.startsWith("config-server/") &&
-                                !fs.startsWith("eureka-server/") &&
-                                !fs.startsWith("config-repo/")
+                            if (fetchStatus == 0) {
+                                changedFiles = sh(
+                                    script: "git diff --name-only FETCH_HEAD HEAD",
+                                    returnStdout: true
+                                ).trim()
+                                echo "Diff: ${prevCommit} (FETCH_HEAD) → HEAD"
+                                if (changedFiles) {
+                                    echo "Raw changed files:\n${changedFiles}"
+                                } else {
+                                    echo "Raw changed files: (empty — diff returned nothing)"
+                                }
+                            } else {
+                                echo "WARNING: Could not fetch previous commit ${prevCommit}. Treating as full rebuild."
+                                changedFiles = sh(script: "git ls-files", returnStdout: true).trim()
                             }
-                            echo "No backend service changes detected. Skipping build."
-                            echo "Non-service files changed (${nonServiceFiles.size()}): ${nonServiceFiles.take(5).join(', ')}${nonServiceFiles.size() > 5 ? ' ...' : ''}"
-                            env.SKIP_BUILD = 'true'
+
+                        } else if (!prevCommit) {
+                            echo "No previous commit found. First build — treating all files as changed."
+                            changedFiles = sh(script: "git ls-files", returnStdout: true).trim()
+
                         } else {
-                            if (env.SERVICES)         echo "Changed application services:    ${env.SERVICES}"
-                            if (env.INFRA_SERVICES)   echo "Changed infrastructure services: ${env.INFRA_SERVICES}"
-                            if (env.RESTART_SERVICES) echo "Config-repo changes — will restart: ${env.RESTART_SERVICES}"
+                            echo "No new commits since last build (same SHA: ${env.GIT_COMMIT}). Skipping build."
+                            env.SKIP_BUILD = 'true'
                         }
-                    }
+
+                        if (env.SKIP_BUILD != 'true') {
+                            def fileList = changedFiles
+                                ? changedFiles.split("\n").collect { it.trim() }.findAll { it }
+                                : []
+
+                            echo "Parsed ${fileList.size()} changed file(s)"
+
+                            def services        = [] as Set
+                            def infraServices   = [] as Set
+                            def restartServices = [] as Set
+
+                            fileList.each { file ->
+                                if (file.startsWith("frontend/"))              return
+
+                                if (file.startsWith("auth-service/"))         services.add("auth-service")
+                                if (file.startsWith("user-service/"))         services.add("user-service")
+                                if (file.startsWith("startup-service/"))      services.add("startup-service")
+                                if (file.startsWith("investment-service/"))   services.add("investment-service")
+                                if (file.startsWith("team-service/"))         services.add("team-service")
+                                if (file.startsWith("messaging-service/"))    services.add("messaging-service")
+                                if (file.startsWith("notification-service/")) services.add("notification-service")
+                                if (file.startsWith("payment-service/"))      services.add("payment-service")
+                                if (file.startsWith("wallet-service/"))       services.add("wallet-service")
+                                if (file.startsWith("api-gateway/"))          services.add("api-gateway")
+                                if (file.startsWith("config-server/"))        infraServices.add("config-server")
+                                if (file.startsWith("eureka-server/"))        infraServices.add("eureka-server")
+                                if (file.startsWith("config-repo/"))          restartServices.add("config-server")
+                            }
+
+                            env.SERVICES         = services.join(",")
+                            env.INFRA_SERVICES   = infraServices.join(",")
+                            env.RESTART_SERVICES = restartServices.join(",")
+
+                            if (!env.SERVICES && !env.INFRA_SERVICES && !env.RESTART_SERVICES) {
+                                def nonServiceFiles = fileList.findAll { f ->
+                                    String fs = f.toString()
+                                    !fs.startsWith("frontend/") &&
+                                    !fs.startsWith("auth-service/") &&
+                                    !fs.startsWith("user-service/") &&
+                                    !fs.startsWith("startup-service/") &&
+                                    !fs.startsWith("investment-service/") &&
+                                    !fs.startsWith("team-service/") &&
+                                    !fs.startsWith("messaging-service/") &&
+                                    !fs.startsWith("notification-service/") &&
+                                    !fs.startsWith("payment-service/") &&
+                                    !fs.startsWith("wallet-service/") &&
+                                    !fs.startsWith("api-gateway/") &&
+                                    !fs.startsWith("config-server/") &&
+                                    !fs.startsWith("eureka-server/") &&
+                                    !fs.startsWith("config-repo/")
+                                }
+                                echo "No backend service changes detected. Skipping build."
+                                echo "Non-service files changed (${nonServiceFiles.size()}): ${nonServiceFiles.take(5).join(', ')}${nonServiceFiles.size() > 5 ? ' ...' : ''}"
+                                env.SKIP_BUILD = 'true'
+                            } else {
+                                if (env.SERVICES)         echo "Changed application services:    ${env.SERVICES}"
+                                if (env.INFRA_SERVICES)   echo "Changed infrastructure services: ${env.INFRA_SERVICES}"
+                                if (env.RESTART_SERVICES) echo "Config-repo changes — will restart: ${env.RESTART_SERVICES}"
+                            }
+                        }
+
+                    } // end else (normal diff path)
                 }
             }
         }
