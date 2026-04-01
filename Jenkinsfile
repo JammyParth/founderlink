@@ -117,7 +117,7 @@ pipeline {
                         def infraServices   = [] as Set
                         def restartServices = [] as Set
 
-                        fileList.each { rawFile ->
+                        fileList.each { file ->
                             if (file.startsWith("frontend/"))              return
 
                             if (file.startsWith("auth-service/"))         services.add("auth-service")
@@ -141,19 +141,21 @@ pipeline {
 
                         if (!env.SERVICES && !env.INFRA_SERVICES && !env.RESTART_SERVICES) {
                             def nonServiceFiles = fileList.findAll { f ->
-                                !f.startsWith("auth-service/") &&
-                                !f.startsWith("user-service/") &&
-                                !f.startsWith("startup-service/") &&
-                                !f.startsWith("investment-service/") &&
-                                !f.startsWith("team-service/") &&
-                                !f.startsWith("messaging-service/") &&
-                                !f.startsWith("notification-service/") &&
-                                !f.startsWith("payment-service/") &&
-                                !f.startsWith("wallet-service/") &&
-                                !f.startsWith("api-gateway/") &&
-                                !f.startsWith("config-server/") &&
-                                !f.startsWith("eureka-server/") &&
-                                !f.startsWith("config-repo/")
+                                String fs = f.toString()
+                                !fs.startsWith("frontend/") &&
+                                !fs.startsWith("auth-service/") &&
+                                !fs.startsWith("user-service/") &&
+                                !fs.startsWith("startup-service/") &&
+                                !fs.startsWith("investment-service/") &&
+                                !fs.startsWith("team-service/") &&
+                                !fs.startsWith("messaging-service/") &&
+                                !fs.startsWith("notification-service/") &&
+                                !fs.startsWith("payment-service/") &&
+                                !fs.startsWith("wallet-service/") &&
+                                !fs.startsWith("api-gateway/") &&
+                                !fs.startsWith("config-server/") &&
+                                !fs.startsWith("eureka-server/") &&
+                                !fs.startsWith("config-repo/")
                             }
                             echo "No backend service changes detected. Skipping build."
                             echo "Non-service files changed (${nonServiceFiles.size()}): ${nonServiceFiles.take(5).join(', ')}${nonServiceFiles.size() > 5 ? ' ...' : ''}"
@@ -175,8 +177,8 @@ pipeline {
             steps {
                 script {
                     def allServices = []
-                    if (env.SERVICES)       allServices.addAll(env.SERVICES.split(","))
-                    if (env.INFRA_SERVICES) allServices.addAll(env.INFRA_SERVICES.split(","))
+                    if (env.SERVICES)       allServices.addAll(env.SERVICES.split(",").findAll { it })
+                    if (env.INFRA_SERVICES) allServices.addAll(env.INFRA_SERVICES.split(",").findAll { it })
 
                     def parallelStages = [:]
                     allServices.each { svc ->
@@ -213,8 +215,8 @@ pipeline {
             steps {
                 script {
                     def allServices = []
-                    if (env.SERVICES)       allServices.addAll(env.SERVICES.split(","))
-                    if (env.INFRA_SERVICES) allServices.addAll(env.INFRA_SERVICES.split(","))
+                    if (env.SERVICES)       allServices.addAll(env.SERVICES.split(",").findAll { it })
+                    if (env.INFRA_SERVICES) allServices.addAll(env.INFRA_SERVICES.split(",").findAll { it })
 
                     def parallelStages = [:]
                     allServices.each { svc ->
@@ -260,8 +262,8 @@ pipeline {
 
                     script {
                         def allServices = []
-                        if (env.SERVICES)       allServices.addAll(env.SERVICES.split(","))
-                        if (env.INFRA_SERVICES) allServices.addAll(env.INFRA_SERVICES.split(","))
+                        if (env.SERVICES)       allServices.addAll(env.SERVICES.split(",").findAll { it })
+                        if (env.INFRA_SERVICES) allServices.addAll(env.INFRA_SERVICES.split(",").findAll { it })
 
                         def parallelStages = [:]
                         allServices.each { svc ->
@@ -352,9 +354,9 @@ pipeline {
             steps {
                 script {
                     def allServices = []
-                    if (env.SERVICES)         allServices.addAll(env.SERVICES.split(","))
-                    if (env.INFRA_SERVICES)   allServices.addAll(env.INFRA_SERVICES.split(","))
-                    if (env.RESTART_SERVICES) allServices.addAll(env.RESTART_SERVICES.split(","))
+                    if (env.SERVICES)         allServices.addAll(env.SERVICES.split(",").findAll { it })
+                    if (env.INFRA_SERVICES)   allServices.addAll(env.INFRA_SERVICES.split(",").findAll { it })
+                    if (env.RESTART_SERVICES) allServices.addAll(env.RESTART_SERVICES.split(",").findAll { it })
 
                     allServices = allServices.unique()
 
