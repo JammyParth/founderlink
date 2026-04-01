@@ -229,8 +229,8 @@ pipeline {
                     fileExists(env.SKIP_FILE) &&
                     readFile(env.SKIP_FILE).trim() != 'true' &&
                     (params.FORCE_BUILD ||
-                     (fileExists(env.SERVICES_FILE) && readFile(env.SERVICES_FILE).trim()) ||
-                     (fileExists(env.INFRA_FILE)    && readFile(env.INFRA_FILE).trim()))
+                    (fileExists(env.SERVICES_FILE) && readFile(env.SERVICES_FILE).trim()) ||
+                    (fileExists(env.INFRA_FILE)    && readFile(env.INFRA_FILE).trim()))
                 }
             }
             steps {
@@ -238,26 +238,26 @@ pipeline {
                     def svcList   = fileExists(env.SERVICES_FILE) ? readFile(env.SERVICES_FILE).trim() : ''
                     def infraList = fileExists(env.INFRA_FILE)    ? readFile(env.INFRA_FILE).trim()    : ''
                     def allServices = []
+
                     if (svcList)   allServices.addAll(svcList.split(",").findAll { it })
                     if (infraList) allServices.addAll(infraList.split(",").findAll { it })
 
-                    if (allServices.isEmpty()) { echo "No services to build"; return }
-
-                    def parallelStages = [:]
-                    allServices.each { svc ->
-                        parallelStages["Build ${svc}"] = {
-                            echo "Building ${svc}"
-                            sh """
-                            docker pull ${DOCKER_REPO}/${svc}:cache || true
-                            docker build \\
-                              --cache-from ${DOCKER_REPO}/${svc}:cache \\
-                              -t ${DOCKER_REPO}/${svc}:${env.COMMIT_TAG} \\
-                              -t ${DOCKER_REPO}/${svc}:cache \\
-                              ./${svc}
-                            """
-                        }
+                    if (allServices.isEmpty()) {
+                        echo "No services to build"
+                        return
                     }
-                    parallel parallelStages
+
+                    allServices.each { svc ->
+                        echo "🚀 Building ${svc}"
+                        sh """
+                        docker pull ${DOCKER_REPO}/${svc}:cache || true
+                        docker build \\
+                        --cache-from ${DOCKER_REPO}/${svc}:cache \\
+                        -t ${DOCKER_REPO}/${svc}:${env.COMMIT_TAG} \\
+                        -t ${DOCKER_REPO}/${svc}:cache \\
+                        ./${svc}
+                        """
+                    }
                 }
             }
         }
