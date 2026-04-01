@@ -29,7 +29,7 @@ security:
     expiration: 30d
     cookie-name: refresh_token
     cookie-path: /auth
-    cookie-same-site: Strict
+    cookie-same-site: None
     cookie-secure: true
 
 seed:

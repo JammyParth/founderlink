@@ -108,8 +108,8 @@ pipeline {
                         def infraServices   = [] as Set
                         def restartServices = [] as Set
 
-                        fileList.each { file ->
-                            echo "  checking: '${file}'"
+                        fileList.each { rawFile ->
+                            String file = rawFile.toString()
                             if (file.startsWith("auth-service/"))         services.add("auth-service")
                             if (file.startsWith("user-service/"))         services.add("user-service")
                             if (file.startsWith("startup-service/"))      services.add("startup-service")

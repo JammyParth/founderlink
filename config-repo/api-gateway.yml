@@ -120,9 +120,8 @@ spring:
       globalcors:
         cors-configurations:
           '[/**]':
-            allowedOrigins:
-              - "http://localhost:4200"
-              - "http://frontend:4200"
+            allowedOriginPatterns:
+              - "*"
             allowedMethods:
               - GET
               - POST
@@ -135,10 +134,7 @@ spring:
 gateway:
   security:
     public-paths:
-      - /auth/login
-      - /auth/register
-      - /auth/refresh
-      - /auth/logout
+      - /auth/**
       - /eureka/**
       #Swagger/OpenAPI endpoints (root and service-prefixed)
       - /v3/api-docs
@@ -201,7 +197,7 @@ rbac:
       roles: [FOUNDER, INVESTOR, COFOUNDER, ADMIN]
 
     - method: GET
-      path: /users/role
+      path: /users/role/*
       roles: [FOUNDER, INVESTOR, COFOUNDER, ADMIN]
 
     - method: GET

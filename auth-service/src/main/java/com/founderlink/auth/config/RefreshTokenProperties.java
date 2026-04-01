@@ -27,7 +27,7 @@ public class RefreshTokenProperties {
     private String cookiePath = "/auth";
 
     @NotBlank
-    private String cookieSameSite = "Strict";
+    private String cookieSameSite = "None";
 
     private boolean cookieSecure = true;
 }

@@ -49,7 +49,7 @@ class RefreshTokenServiceTest {
         properties.setExpiration(Duration.ofDays(30));
         properties.setCookieName("refresh_token");
         properties.setCookiePath("/auth");
-        properties.setCookieSameSite("Strict");
+        properties.setCookieSameSite("None");
         properties.setCookieSecure(true);
 
         clock = Clock.fixed(Instant.parse("2026-03-18T10:15:30Z"), ZoneOffset.UTC);

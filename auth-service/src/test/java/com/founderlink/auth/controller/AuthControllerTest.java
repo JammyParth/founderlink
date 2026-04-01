@@ -36,7 +36,7 @@ class AuthControllerTest {
         refreshTokenProperties.setExpiration(Duration.ofDays(30));
         refreshTokenProperties.setCookieName("refresh_token");
         refreshTokenProperties.setCookiePath("/auth");
-        refreshTokenProperties.setCookieSameSite("Strict");
+        refreshTokenProperties.setCookieSameSite("None");
         refreshTokenProperties.setCookieSecure(true);
 
         mockMvc = MockMvcBuilders
