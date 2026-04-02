@@ -25,11 +25,11 @@ export class NotificationService {
   }
 
   getNotifications(userId: number): Observable<ApiEnvelope<AppNotification[]>> {
-    return this.apiClient.get<AppNotificationDto[]>(`${this.baseUrl}/user/${userId}`).pipe(map(e => this.mapNotificationList(e)));
+    return this.apiClient.get<AppNotificationDto[]>(`${this.baseUrl}/${userId}`).pipe(map(e => this.mapNotificationList(e)));
   }
 
   getUnreadNotifications(userId: number): Observable<ApiEnvelope<AppNotification[]>> {
-    return this.apiClient.get<AppNotificationDto[]>(`${this.baseUrl}/user/${userId}/unread`).pipe(map(e => this.mapNotificationList(e)));
+    return this.apiClient.get<AppNotificationDto[]>(`${this.baseUrl}/${userId}/unread`).pipe(map(e => this.mapNotificationList(e)));
   }
 
   markAsRead(notificationId: number): Observable<ApiEnvelope<AppNotification>> {

@@ -73,15 +73,41 @@ import { InvestorInvestmentFacade } from '../../investments/investor-investment.
           </div>
           
           <!-- Call to actions based on role -->
-          <div class="px-6 py-6 border-t border-gray-200 bg-gray-50 flex justify-end gap-4" *ngIf="sessionFacade.session$ | async as session">
+          <div class="px-6 py-6 border-t border-gray-200 bg-gray-50 flex flex-wrap justify-end gap-4" *ngIf="sessionFacade.session$ | async as session">
+
+            <ng-container *ngIf="session.status === 'anonymous'">
+              <a
+                routerLink="/auth/login"
+                [queryParams]="{ returnUrl: '/startups/' + startup.id }"
+                class="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-md shadow-sm"
+              >
+                Login to connect
+              </a>
+            </ng-container>
             
             <ng-container *ngIf="session.role === UserRole.INVESTOR">
+              <a
+                [routerLink]="['/messages', startup.founderId]"
+                class="bg-white hover:bg-gray-50 text-gray-700 font-medium py-2 px-4 rounded-md shadow-sm border border-gray-300"
+              >
+                Message Founder
+              </a>
+
               <div class="flex items-center gap-3">
                 <input type="number" #investAmount min="1000" placeholder="Amount ($)" class="border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm w-32">
                 <button (click)="invest(startup.id, investAmount.value)" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded-md shadow-sm transition-colors">
                   Invest Now
                 </button>
               </div>
+            </ng-container>
+
+            <ng-container *ngIf="session.status === 'authenticated' && session.userId !== startup.founderId && session.role !== UserRole.INVESTOR">
+              <a
+                [routerLink]="['/messages', startup.founderId]"
+                class="bg-white hover:bg-gray-50 text-gray-700 font-medium py-2 px-4 rounded-md shadow-sm border border-gray-300"
+              >
+                Message Founder
+              </a>
             </ng-container>
 
             <ng-container *ngIf="session.role === UserRole.FOUNDER && session.userId === startup.founderId">

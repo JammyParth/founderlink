@@ -134,6 +134,13 @@ class MessageControllerTest {
                 .andExpect(jsonPath("$.message").value("Message not found with id: 999"));
     }
 
+    @Test
+    @DisplayName("GET /messages/conversation without path IDs does not bind to message-by-id route")
+    void getConversation_WithoutPathIds_DoesNotBindToMessageIdRoute() throws Exception {
+        mockMvc.perform(get("/messages/conversation"))
+                .andExpect(status().isNotFound());
+    }
+
     // --- GET /messages/conversation/{user1}/{user2} ---
 
     @Test

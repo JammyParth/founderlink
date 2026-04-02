@@ -33,9 +33,9 @@ export class MessageService {
   }
 
   getConversation(user1Id: number, user2Id: number): Observable<ApiEnvelope<Message[]>> {
-    return this.apiClient.get<MessageDto[]>(`${this.baseUrl}/conversation`, {
-      params: { user1Id, user2Id }
-    }).pipe(map(e => this.mapMessageList(e)));
+    return this.apiClient
+      .get<MessageDto[]>(`${this.baseUrl}/conversation/${user1Id}/${user2Id}`)
+      .pipe(map(e => this.mapMessageList(e)));
   }
 
   getConversationPartners(userId: number): Observable<ApiEnvelope<number[]>> {

@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.util.StringUtils;
 
 import com.founderlink.startup.dto.request.StartupRequestDto;
 import com.founderlink.startup.dto.response.ApiResponse;
@@ -86,9 +87,10 @@ public class StartupController {
                 @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "403", description = "Access denied — insufficient role")
         })
         public ResponseEntity<ApiResponse<?>> getAllStartups(
-                        @RequestHeader("X-User-Role") String userRole) {
+                        @RequestHeader(value = "X-User-Role", required = false) String userRole) {
 
-                if (!userRole.equals("ROLE_INVESTOR") &&
+                if (StringUtils.hasText(userRole) &&
+                                !userRole.equals("ROLE_INVESTOR") &&
                                 !userRole.equals("ROLE_FOUNDER") &&
                                 !userRole.equals("ROLE_COFOUNDER") &&
                                 !userRole.equals("ROLE_ADMIN")) {
@@ -268,14 +270,15 @@ public class StartupController {
                 @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "403", description = "Access denied — insufficient role")
         })
         public ResponseEntity<ApiResponse<?>> searchStartups(
-                        @RequestHeader("X-User-Role") String userRole,
+                        @RequestHeader(value = "X-User-Role", required = false) String userRole,
                         @RequestParam(required = false) String industry,
                         @RequestParam(required = false) StartupStage stage,
                         @RequestParam(required = false) BigDecimal minFunding,
                         @RequestParam(required = false) BigDecimal maxFunding) {
 
                 log.info("GET /startup/search - industry: {}, stage: {}, role: {}", industry, stage, userRole);
-                if (!userRole.equals("ROLE_INVESTOR") &&
+                if (StringUtils.hasText(userRole) &&
+                                !userRole.equals("ROLE_INVESTOR") &&
                                 !userRole.equals("ROLE_FOUNDER") &&
                                 !userRole.equals("ROLE_COFOUNDER") &&
                                 !userRole.equals("ROLE_ADMIN")) {

@@ -1,5 +1,5 @@
 import { Injectable, inject } from '@angular/core';
-import { BehaviorSubject, Observable, Subscription, timer, filter, switchMap, catchError, of, EMPTY, tap } from 'rxjs';
+import { BehaviorSubject, Observable, Subscription, timer, switchMap, EMPTY } from 'rxjs';
 import { DataState, createInitialState } from '../../shared/models/data-state.model';
 import { AppNotification } from '../../shared/models/notification.model';
 import { NotificationService } from './notification.service';
@@ -34,22 +34,39 @@ export class NotificationFacade {
           if (typeof document !== 'undefined' && document.hidden) {
             return EMPTY;
           }
-          return this.notificationService.getUnreadNotifications(session.userId).pipe(
-            tap(() => { consecutiveFailures = 0; }),
-            catchError(() => {
-              consecutiveFailures++;
-              if (consecutiveFailures >= 3) {
-                this.unreadStateSubject.next({ ...this.unreadStateSubject.value, error: 'Notifications may be out of sync' });
-              }
-              return EMPTY;
-            })
-          );
+          return this.notificationService.getUnreadNotifications(session.userId);
         }
         return EMPTY;
       })
-    ).subscribe((envelope: any) => {
-      if (envelope && envelope.success) {
+    ).subscribe(envelope => {
+      if (!envelope) {
+        return;
+      }
+
+      if (envelope.success) {
+        consecutiveFailures = 0;
         this.unreadStateSubject.next({ data: envelope.data, loadingState: 'loaded', error: null });
+        return;
+      }
+
+      consecutiveFailures++;
+
+      if (envelope.statusCode === 401 || envelope.statusCode === 403) {
+        this.unreadStateSubject.next({
+          data: this.unreadStateSubject.value.data,
+          loadingState: 'error',
+          error: 'Notification polling stopped because authorization failed.'
+        });
+        this.stopPolling();
+        return;
+      }
+
+      if (consecutiveFailures >= 3) {
+        this.unreadStateSubject.next({
+          data: this.unreadStateSubject.value.data,
+          loadingState: 'error',
+          error: 'Notifications may be out of sync'
+        });
       }
     });
   }

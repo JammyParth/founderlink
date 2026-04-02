@@ -136,6 +136,9 @@ gateway:
     public-paths:
       - /auth/**
       - /eureka/**
+      - /startup
+      - /startup/search
+      - /startup/details/**
       #Swagger/OpenAPI endpoints (root and service-prefixed)
       - /v3/api-docs
       - /v3/api-docs/**

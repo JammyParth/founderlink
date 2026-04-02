@@ -8,8 +8,7 @@ export const routes: Routes = [
     children: [
       {
         path: '',
-        redirectTo: 'startups',
-        pathMatch: 'full'
+        loadComponent: () => import('./features/startups/startup-list-page/startup-list-page.component').then(m => m.StartupListPageComponent)
       },
       {
         path: 'auth',

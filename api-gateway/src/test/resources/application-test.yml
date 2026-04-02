@@ -38,6 +38,9 @@ gateway:
     public-paths:
       - /auth/**
       - /eureka/**
+      - /startup
+      - /startup/search
+      - /startup/details/**
 
 rbac:
   default-policy: DENY

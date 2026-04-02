@@ -1,9 +1,13 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable, tap } from 'rxjs';
+import { Observable, firstValueFrom, mapTo, of, tap, timeout, catchError } from 'rxjs';
 import { SessionFacade } from './session.facade';
 import { environment } from '../../../environments/environment';
 import { LoginResponse, UserRole } from '../../shared/models/auth.model';
+
+interface RefreshOptions {
+  redirectOnFailure?: boolean;
+}
 
 @Injectable({
   providedIn: 'root'
@@ -50,7 +54,21 @@ export class AuthService {
       );
   }
 
-  refresh(): Observable<LoginResponse> {
+  initializeSession(): Promise<void> {
+    return firstValueFrom(
+      this.refresh({ redirectOnFailure: false }).pipe(
+        timeout(10000),
+        mapTo(void 0),
+        catchError(() => {
+          this.sessionFacade.clearSession();
+          return of(void 0);
+        })
+      )
+    );
+  }
+
+  refresh(options: RefreshOptions = {}): Observable<LoginResponse> {
+    const { redirectOnFailure = true } = options;
     this.sessionFacade.setSession({ status: 'refreshing' });
     return this.http.post<LoginResponse>(`${this.baseUrl}/refresh`, {}, { withCredentials: true })
       .pipe(
@@ -65,7 +83,10 @@ export class AuthService {
             });
           },
           error: () => {
-            this.logout();
+            this.sessionFacade.clearSession();
+            if (redirectOnFailure) {
+              this.logout();
+            }
           }
         })
       );

@@ -9,7 +9,7 @@ export class ApiNormalizerService {
 
   normalizeSuccess<T>(response: HttpResponse<any>): ApiEnvelope<T> {
     if (response.status === 204 || response.body === null) {
-      return { success: true, data: null, error: null };
+      return { success: true, data: null, error: null, statusCode: response.status };
     }
 
     const body = response.body;
@@ -21,12 +21,13 @@ export class ApiNormalizerService {
       return { 
         success: true, 
         data: wrapped.data !== undefined ? wrapped.data : (null as any), 
-        error: null 
+        error: null,
+        statusCode: response.status
       };
     }
 
     // Plain DTO or array
-    return { success: true, data: body as T, error: null };
+    return { success: true, data: body as T, error: null, statusCode: response.status };
   }
 
   normalizeError<T>(errorResponse: HttpErrorResponse): ApiEnvelope<T> {
@@ -54,6 +55,6 @@ export class ApiNormalizerService {
       errorMessage = errorResponse.message;
     }
 
-    return { success: false, data: null, error: errorMessage };
+    return { success: false, data: null, error: errorMessage, statusCode: errorResponse.status };
   }
 }

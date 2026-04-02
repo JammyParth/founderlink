@@ -13,7 +13,7 @@ import { NotificationFacade } from '../../features/notifications/notification.fa
   template: `
     <div class="min-h-screen flex flex-col bg-gray-50">
       <header class="bg-white shadow-sm h-16 flex items-center justify-between px-6 sticky top-0 z-50">
-        <h1 class="text-xl font-bold text-gray-900 cursor-pointer" routerLink="/startups">FounderLink</h1>
+        <h1 class="text-xl font-bold text-gray-900 cursor-pointer" routerLink="/">FounderLink</h1>
         
         <nav class="flex gap-6 items-center">
           <ng-container *ngIf="sessionFacade.session$ | async as session">
@@ -65,6 +65,7 @@ import { NotificationFacade } from '../../features/notifications/notification.fa
             </ng-container>
 
             <ng-container *ngIf="session.status !== 'authenticated'">
+              <a routerLink="/" class="text-sm font-medium text-gray-600 hover:text-gray-900">Home</a>
               <a routerLink="/auth/login" class="text-blue-600 hover:underline font-medium">Login</a>
               <a routerLink="/auth/register" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md font-medium text-sm">Register</a>
             </ng-container>
@@ -101,4 +102,3 @@ export class AppShellComponent implements OnInit, OnDestroy {
     this.authService.logout();
   }
 }
-

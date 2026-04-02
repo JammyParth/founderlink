@@ -100,6 +100,16 @@ class StartupControllerTest {
     }
 
     @Test
+    void getAllStartups_AllowsAnonymousAccess() throws Exception {
+        when(startupService.getAllStartups()).thenReturn(List.of(responseDto));
+
+        mockMvc.perform(get("/startup"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.message").value("Startups fetched successfully"))
+                .andExpect(jsonPath("$.data[0].name").value("EduReach"));
+    }
+
+    @Test
     void getAllStartups_WrongRole_Forbidden() throws Exception {
         mockMvc.perform(get("/startup")
                 .header("X-User-Role", "ROLE_UNKNOWN"))
@@ -178,6 +188,18 @@ class StartupControllerTest {
 
         mockMvc.perform(get("/startup/search")
                 .header("X-User-Role", "ROLE_INVESTOR")
+                .param("industry", "EdTech")
+                .param("stage", "MVP"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.message").value("Startups fetched successfully"));
+    }
+
+    @Test
+    void searchStartups_AllowsAnonymousAccess() throws Exception {
+        when(startupService.searchStartups("EdTech", StartupStage.MVP, null, null))
+                .thenReturn(List.of(responseDto));
+
+        mockMvc.perform(get("/startup/search")
                 .param("industry", "EdTech")
                 .param("stage", "MVP"))
                 .andExpect(status().isOk())

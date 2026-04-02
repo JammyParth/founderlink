@@ -6,7 +6,6 @@ import { UserRole } from '../../shared/models/auth.model';
 export const startupRoutes: Routes = [
   {
     path: '', // mapped from /startups in app.routes
-    canActivate: [authGuard],
     loadComponent: () => import('./startup-discovery-page/startup-discovery-page.component').then(m => m.StartupDiscoveryPageComponent)
   },
   {
@@ -29,7 +28,6 @@ export const startupRoutes: Routes = [
   },
   {
     path: ':id',
-    canActivate: [authGuard],
     loadComponent: () => import('./startup-detail-page/startup-detail-page.component').then(m => m.StartupDetailPageComponent)
   }
 ];

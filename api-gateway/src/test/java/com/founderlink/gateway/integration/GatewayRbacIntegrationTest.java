@@ -98,6 +98,21 @@ class GatewayRbacIntegrationTest {
     }
 
     @Test
+    void allowsAnonymousAccessToPublicStartupDiscoveryEndpoints() {
+        exchangeWithoutAuthorization(HttpMethod.GET, "/startup")
+                .expectStatus().isOk()
+                .expectBody()
+                .jsonPath("$.xUserId").doesNotExist()
+                .jsonPath("$.xUserRole").doesNotExist();
+
+        exchangeWithoutAuthorization(HttpMethod.GET, "/startup/details/42")
+                .expectStatus().isOk();
+
+        exchangeWithoutAuthorization(HttpMethod.GET, "/startup/search?industry=FinTech")
+                .expectStatus().isOk();
+    }
+
+    @Test
     void returnsUnauthorizedWhenBearerTokenIsBlank() {
         webTestClient.get()
                 .uri("/users/42")
