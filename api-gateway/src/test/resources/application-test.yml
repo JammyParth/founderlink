@@ -141,6 +141,9 @@ rbac:
     - method: PUT
       path: /notifications/*/read
       roles: [FOUNDER, INVESTOR, COFOUNDER, ADMIN]
+    - method: PATCH
+      path: /notifications/*/read
+      roles: [FOUNDER, INVESTOR, COFOUNDER, ADMIN]
 
 eureka:
   client:

@@ -184,6 +184,11 @@ class GatewayRbacIntegrationTest {
                     .uri(path)
                     .contentType(MediaType.APPLICATION_JSON)
                     .bodyValue(Map.of("probe", true));
+        } else if (HttpMethod.PATCH.equals(method)) {
+            request = webTestClient.patch()
+                    .uri(path)
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .bodyValue(Map.of("probe", true));
         } else {
             throw new IllegalArgumentException("Unsupported method: " + method);
         }
@@ -236,7 +241,8 @@ class GatewayRbacIntegrationTest {
                 policy(HttpMethod.GET, "/messages/partners/10", Role.FOUNDER, Role.INVESTOR, Role.COFOUNDER, Role.ADMIN),
                 policy(HttpMethod.GET, "/notifications/10", Role.FOUNDER, Role.INVESTOR, Role.COFOUNDER, Role.ADMIN),
                 policy(HttpMethod.GET, "/notifications/10/unread", Role.FOUNDER, Role.INVESTOR, Role.COFOUNDER, Role.ADMIN),
-                policy(HttpMethod.PUT, "/notifications/42/read", Role.FOUNDER, Role.INVESTOR, Role.COFOUNDER, Role.ADMIN)
+                policy(HttpMethod.PUT, "/notifications/42/read", Role.FOUNDER, Role.INVESTOR, Role.COFOUNDER, Role.ADMIN),
+                policy(HttpMethod.PATCH, "/notifications/42/read", Role.FOUNDER, Role.INVESTOR, Role.COFOUNDER, Role.ADMIN)
         );
     }
 
@@ -270,6 +276,7 @@ class GatewayRbacIntegrationTest {
                 RequestMethod.GET,
                 RequestMethod.POST,
                 RequestMethod.PUT,
+                RequestMethod.PATCH,
                 RequestMethod.DELETE
         })
         Map<String, Object> echo(

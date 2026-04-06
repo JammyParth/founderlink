@@ -1,15 +1,13 @@
 import { inject } from '@angular/core';
 import { CanActivateFn, Router } from '@angular/router';
-import { SessionFacade } from '../auth/session.facade';
+import { AuthService } from '../services/auth.service';
 
-export const authGuard: CanActivateFn = (route, state) => {
-  const sessionFacade = inject(SessionFacade);
+export const authGuard: CanActivateFn = () => {
+  const auth = inject(AuthService);
   const router = inject(Router);
 
-  if (sessionFacade.isAuthenticated) {
-    return true;
-  }
+  if (auth.isLoggedIn()) return true;
 
-  // Redirect to login (to be built in Phase 1)
-  return router.createUrlTree(['/auth/login'], { queryParams: { returnUrl: state.url } });
+  router.navigate(['/auth/login']);
+  return false;
 };

@@ -233,7 +233,8 @@ class RbacServiceTest {
                 Arguments.of(HttpMethod.GET, "/messages/partners/1", Role.INVESTOR),
                 Arguments.of(HttpMethod.GET, "/notifications/4", Role.ADMIN),
                 Arguments.of(HttpMethod.GET, "/notifications/4/unread", Role.FOUNDER),
-                Arguments.of(HttpMethod.PUT, "/notifications/4/read", Role.COFOUNDER)
+                Arguments.of(HttpMethod.PUT, "/notifications/4/read", Role.COFOUNDER),
+                Arguments.of(HttpMethod.PATCH, "/notifications/4/read", Role.INVESTOR)
         );
     }
 
@@ -292,7 +293,8 @@ class RbacServiceTest {
                 rule(HttpMethod.GET, "/messages/*", Role.FOUNDER, Role.INVESTOR, Role.COFOUNDER, Role.ADMIN),
                 rule(HttpMethod.GET, "/notifications/*/unread", Role.FOUNDER, Role.INVESTOR, Role.COFOUNDER, Role.ADMIN),
                 rule(HttpMethod.GET, "/notifications/*", Role.FOUNDER, Role.INVESTOR, Role.COFOUNDER, Role.ADMIN),
-                rule(HttpMethod.PUT, "/notifications/*/read", Role.FOUNDER, Role.INVESTOR, Role.COFOUNDER, Role.ADMIN)
+                rule(HttpMethod.PUT, "/notifications/*/read", Role.FOUNDER, Role.INVESTOR, Role.COFOUNDER, Role.ADMIN),
+                rule(HttpMethod.PATCH, "/notifications/*/read", Role.FOUNDER, Role.INVESTOR, Role.COFOUNDER, Role.ADMIN)
         );
     }
 

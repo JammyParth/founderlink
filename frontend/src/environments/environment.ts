@@ -1,5 +1,5 @@
 export const environment = {
   production: false,
-  apiBaseUrl: 'https://backend.founderlink.online',
-  razorpayKeyId: 'rzp_test_SVMhmfHxoIcbac'
+  apiUrl: 'backend.founderlink.online',
+  razorpayKey: 'rzp_test_SVMhmfHxoIcbac'
 };

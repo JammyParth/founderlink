@@ -54,6 +54,10 @@ public class NotificationService {
         return commandService.markAsRead(id);
     }
 
+    public NotificationResponseDTO markAsReadForUser(Long id, Long requesterUserId) {
+        return commandService.markAsReadForUser(id, requesterUserId);
+    }
+
     // ── Delegated to Query side ──────────────────────────────────────────────
 
     public List<NotificationResponseDTO> getNotificationsByUser(Long userId) {

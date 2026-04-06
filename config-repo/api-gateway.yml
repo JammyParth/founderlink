@@ -136,9 +136,7 @@ gateway:
     public-paths:
       - /auth/**
       - /eureka/**
-      - /startup
-      - /startup/search
-      - /startup/details/**
+      - /users/public/stats
       #Swagger/OpenAPI endpoints (root and service-prefixed)
       - /v3/api-docs
       - /v3/api-docs/**
@@ -190,6 +188,10 @@ gateway:
       - /wallets/swagger-ui/**
       - /wallets/swagger-resources/**
       - /wallets/webjars/**
+    public-get-paths:
+      - /startup
+      - /startup/search
+      - /startup/details/**
 
 rbac:
   default-policy: DENY
@@ -328,6 +330,10 @@ rbac:
       roles: [FOUNDER, INVESTOR, COFOUNDER, ADMIN]
 
     - method: PUT
+      path: /notifications/*/read
+      roles: [FOUNDER, INVESTOR, COFOUNDER, ADMIN]
+
+    - method: PATCH
       path: /notifications/*/read
       roles: [FOUNDER, INVESTOR, COFOUNDER, ADMIN]
 

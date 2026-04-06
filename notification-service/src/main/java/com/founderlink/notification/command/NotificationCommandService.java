@@ -10,7 +10,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Caching;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
 
 @Service
 public class NotificationCommandService {
@@ -66,12 +68,56 @@ public class NotificationCommandService {
         return mapToDTO(notificationRepository.save(notification));
     }
 
+    @CircuitBreaker(name = "notificationService", fallbackMethod = "markAsReadForUserFallback")
+    @Retry(name = "notificationService")
+    @Caching(evict = {
+        @CacheEvict(value = "notificationsByUser", allEntries = true),
+        @CacheEvict(value = "unreadNotifications", allEntries = true)
+    })
+    public NotificationResponseDTO markAsReadForUser(Long id, Long requesterUserId) {
+        log.info("COMMAND - markAsReadForUser: notificationId={}, requesterUserId={}", id, requesterUserId);
+        Notification notification = notificationRepository.findById(id)
+                .orElseThrow(() -> new NotificationNotFoundException(id));
+
+        if (!notification.getUserId().equals(requesterUserId)) {
+            log.warn(
+                    "Forbidden mark-as-read request. token.userId={}, notificationId={}, notification.userId={}",
+                    requesterUserId,
+                    id,
+                    notification.getUserId()
+            );
+            throw new ResponseStatusException(
+                    HttpStatus.FORBIDDEN,
+                    "You are not allowed to modify this notification."
+            );
+        }
+
+        notification.setRead(true);
+        return mapToDTO(notificationRepository.save(notification));
+    }
+
     public NotificationResponseDTO markAsReadFallback(Long id, Throwable throwable) {
         log.error("Fallback - markAsRead. Notification ID: {}, Reason: {}", id, throwable.getMessage());
         if (throwable instanceof NotificationNotFoundException) {
             throw (NotificationNotFoundException) throwable;
         }
         return NotificationResponseDTO.builder().id(id).read(true).build();
+    }
+
+    public NotificationResponseDTO markAsReadForUserFallback(Long id, Long requesterUserId, Throwable throwable) {
+        log.error(
+                "Fallback - markAsReadForUser. Notification ID: {}, Requester: {}, Reason: {}",
+                id,
+                requesterUserId,
+                throwable.getMessage()
+        );
+        if (throwable instanceof NotificationNotFoundException) {
+            throw (NotificationNotFoundException) throwable;
+        }
+        if (throwable instanceof ResponseStatusException responseStatusException) {
+            throw responseStatusException;
+        }
+        return NotificationResponseDTO.builder().id(id).userId(requesterUserId).read(true).build();
     }
 
     private NotificationResponseDTO mapToDTO(Notification notification) {

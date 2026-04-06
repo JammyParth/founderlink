@@ -1,18 +1,26 @@
 import { inject } from '@angular/core';
 import { CanActivateFn, Router } from '@angular/router';
-import { SessionFacade } from '../auth/session.facade';
+import { AuthService } from '../services/auth.service';
 
-export const roleGuard: CanActivateFn = (route) => {
-  const sessionFacade = inject(SessionFacade);
+/**
+ * Role guard factory.
+ * Pass allowed roles WITHOUT the ROLE_ prefix (e.g. ['FOUNDER', 'INVESTOR']).
+ * The stored JWT role has the ROLE_ prefix, so we strip it before comparing.
+ */
+export const roleGuard = (allowedRoles: string[]): CanActivateFn => () => {
+  const auth = inject(AuthService);
   const router = inject(Router);
 
-  const allowedRoles = route.data?.['roles'] as string[];
-  const userRole = sessionFacade.currentSession.role;
-
-  if (sessionFacade.isAuthenticated && userRole && allowedRoles?.includes(userRole)) {
-    return true;
+  const rawRole = auth.role();
+  if (!rawRole) {
+    router.navigate(['/auth/login']);
+    return false;
   }
 
-  // Not authorized, redirect to forbidden
-  return router.createUrlTree(['/forbidden']);
+  // Strip ROLE_ prefix for comparison
+  const role = rawRole.replace('ROLE_', '');
+  if (allowedRoles.includes(role)) return true;
+
+  router.navigate(['/dashboard']);
+  return false;
 };
