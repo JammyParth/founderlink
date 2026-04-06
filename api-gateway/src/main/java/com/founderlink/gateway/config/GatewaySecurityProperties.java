@@ -9,6 +9,7 @@ import java.util.List;
 public class GatewaySecurityProperties {
 
     private List<String> publicPaths = new ArrayList<>();
+    private List<String> publicGetPaths = new ArrayList<>();
 
     public List<String> getPublicPaths() {
         return publicPaths;
@@ -18,5 +19,12 @@ public class GatewaySecurityProperties {
         this.publicPaths = publicPaths;
     }
 
+    public List<String> getPublicGetPaths() {
+        return publicGetPaths;
+    }
+
+    public void setPublicGetPaths(List<String> publicGetPaths) {
+        this.publicGetPaths = publicGetPaths;
+    }
 
 }

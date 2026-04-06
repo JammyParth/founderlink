@@ -1,10 +1,14 @@
 package com.founderlink.gateway.service;
 
 import com.founderlink.gateway.config.GatewaySecurityProperties;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.server.reactive.ServerHttpRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.util.AntPathMatcher;
 import org.springframework.util.StringUtils;
-import org.springframework.http.server.reactive.ServerHttpRequest;
+
+import java.util.Collections;
+import java.util.List;
 
 @Service
 public class RouteValidator {
@@ -20,10 +24,32 @@ public class RouteValidator {
 
     public boolean isSecured(ServerHttpRequest request) {
         String requestPath = normalizePath(request.getPath().value());
-        return gatewaySecurityProperties.getPublicPaths().stream()
+        if (matchesConfiguredPath(requestPath, gatewaySecurityProperties.getPublicPaths())) {
+            return false;
+        }
+
+        if (isPublicReadRequest(request)
+                && matchesConfiguredPath(requestPath, gatewaySecurityProperties.getPublicGetPaths())) {
+            return false;
+        }
+
+        return true;
+    }
+
+    private boolean matchesConfiguredPath(String requestPath, List<String> configuredPaths) {
+        return safePaths(configuredPaths).stream()
                 .filter(StringUtils::hasText)
                 .map(this::normalizePath)
-                .noneMatch(publicPath -> pathMatcher.match(publicPath, requestPath));
+                .anyMatch(publicPath -> pathMatcher.match(publicPath, requestPath));
+    }
+
+    private boolean isPublicReadRequest(ServerHttpRequest request) {
+        HttpMethod method = request.getMethod();
+        return HttpMethod.GET.equals(method) || HttpMethod.HEAD.equals(method);
+    }
+
+    private List<String> safePaths(List<String> configuredPaths) {
+        return configuredPaths != null ? configuredPaths : Collections.emptyList();
     }
 
     private String normalizePath(String path) {
