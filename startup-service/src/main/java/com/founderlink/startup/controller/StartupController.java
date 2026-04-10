@@ -362,7 +362,7 @@ public class StartupController {
                 return Sort.by(direction, property);
         }
 
-        private <T> Map<String, Object> toPaginatedResponse(Page<T> page) {
+        private <T> ApiResponse<Map<String, Object>> toPaginatedResponse(Page<T> page) {
                 Map<String, Object> payload = new HashMap<>();
                 payload.put("content", page.getContent());
                 payload.put("page", page.getNumber());
@@ -371,10 +371,6 @@ public class StartupController {
                 payload.put("totalPages", page.getTotalPages());
                 payload.put("last", page.isLast());
 
-                Map<String, Object> response = new HashMap<>();
-                response.put("success", true);
-                response.put("data", payload);
-                response.put("error", null);
-                return response;
+                return new ApiResponse<>("Startups fetched successfully", payload);
         }
 }

@@ -136,7 +136,7 @@ INSERT IGNORE INTO notifications (user_id, type, message, is_read, created_at) V
 (1073,'INVESTMENT_REJECTED','Your investment proposal for seed_DataBridge has been reviewed and declined by the founder.',0,'2024-12-23 09:00:00'),
 (1074,'INVESTMENT_REJECTED','Your investment proposal for seed_WasteWise has been reviewed and declined by the founder.',0,'2024-12-25 09:00:00'),
 (1075,'INVESTMENT_REJECTED','Your investment proposal for seed_SolarGrid has been reviewed and declined by the founder.',1,'2024-12-27 09:00:00'),
--- Additional engagement notifications
+-- Additional engagement notifications 
 (1019,'INVESTMENT_RECEIVED','seed_Arun Nair has shown interest in seed_NeoBank365 with an investment of INR 12,00,000.',1,'2024-05-07 10:05:00'),
 (1079,'INVESTMENT_APPROVED','Your investment in seed_NeoBank365 has been approved. Proceed to payment.',1,'2024-05-08 09:00:00'),
 (1019,'PAYMENT_SUCCESS','Your startup seed_NeoBank365 received INR 12,00,000. Wallet updated.',1,'2024-05-08 11:35:00'),

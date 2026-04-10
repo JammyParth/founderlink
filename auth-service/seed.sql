@@ -12,7 +12,7 @@ SET NAMES utf8mb4;
 SET foreign_key_checks = 0;
 
 -- ---------------------------------------------------------------------------
--- TABLE: users
+-- TABLE: users 
 -- ---------------------------------------------------------------------------
 
 INSERT IGNORE INTO users (id, name, email, password, role, created_at) VALUES

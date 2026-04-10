@@ -8,7 +8,7 @@
 --   - Founders ↔ Cofounders: team discussions
 --   - Investors ↔ Investors: deal sharing
 -- Target: 200+ rows
--- Idempotent: INSERT IGNORE
+-- Idempotent: INSERT IGNORE 
 -- =============================================================================
 
 SET NAMES utf8mb4;

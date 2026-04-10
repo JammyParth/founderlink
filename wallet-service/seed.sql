@@ -131,5 +131,5 @@ VALUES
 (6050,3050,5050,'seed-wtx-10050',850000.00,'2024-07-09 11:00:00');
 
 SET foreign_key_checks = 1;
--- END wallet-service/seed.sql
+-- END wallet-service/seed.sql 
 -- Total rows: wallets=50, wallet_transactions=50 → 100 rows

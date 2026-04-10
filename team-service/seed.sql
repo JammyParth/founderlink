@@ -304,5 +304,5 @@ INSERT IGNORE INTO invitations (startupId, founderId, invitedUserId, role, statu
 (2100,1040,1160,'MARKETING_HEAD','CANCELLED','2025-06-14 10:00:00','2025-06-15 10:00:00');
 
 SET foreign_key_checks = 1;
--- END team-service/seed.sql
+-- END team-service/seed.sql 
 -- Total rows: team_members=160, invitations=100 → 260 rows

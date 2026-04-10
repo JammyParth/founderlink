@@ -93,7 +93,7 @@ VALUES
 -- TABLE: payment_transaction_logs
 -- Audit log entries for each payment (2–3 entries per payment)
 -- Payments 5001–5050 (SUCCESS): HOLD_SUCCESS → CAPTURE_SUCCESS → CREDIT_SUCCESS
--- Payments 5051–5060 (FAILED): HOLD_SUCCESS → CAPTURE_FAILED
+-- Payments 5051–5060 (FAILED): HOLD_SUCCESS → CAPTURE_FAILED 
 -- ---------------------------------------------------------------------------
 
 INSERT IGNORE INTO payment_transaction_logs (payment_id, action, details, timestamp) VALUES

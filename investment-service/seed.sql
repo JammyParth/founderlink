@@ -177,4 +177,4 @@ INSERT IGNORE INTO investments (id, startupId, investorId, amount, status, creat
 
 SET foreign_key_checks = 1;
 -- END investment-service/seed.sql
--- Total rows: 150 (investment IDs 3001–3150)
+-- Total rows: 150 (investment IDs 3001–3150) 

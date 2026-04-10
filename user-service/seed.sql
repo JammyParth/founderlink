@@ -4,7 +4,7 @@
 -- User IDs: 1001–1200 (MUST match auth-service exactly)
 -- Role: stored as STRING enum (FOUNDER / INVESTOR / COFOUNDER / ADMIN)
 -- No cross-DB queries — all IDs are pre-defined constants
--- Idempotent: INSERT IGNORE
+-- Idempotent: INSERT IGNORE 
 -- =============================================================================
 
 SET NAMES utf8mb4;
@@ -553,28 +553,7 @@ INSERT IGNORE INTO users (id, name, email, skills, experience, bio, portfolioLin
  'https://github.com/seed_rina','COFOUNDER','2024-09-01 10:00:00'),
 (1180,'seed_Sita Thapa','seed_user180@test.com','Handcraft,Artisan,Fair Trade','5 years in FairTrade',
  'Fair trade cofounder empowering artisans with digital platforms.',
- 'https://linkedin.com/in/seed_sita','COFOUNDER','2024-09-01 10:00:00'),
--- ADMIN users (1181–1200)
-(1181,'seed_Admin One','seed_admin1@test.com','System Administration,Monitoring,On-Call','10 years','Platform admin managing system health.','https://github.com/seed_admin1','ADMIN','2024-09-01 10:00:00'),
-(1182,'seed_Admin Two','seed_admin2@test.com','System Administration,Monitoring,On-Call','10 years','Platform admin managing system health.','https://github.com/seed_admin2','ADMIN','2024-09-01 10:00:00'),
-(1183,'seed_Admin Three','seed_admin3@test.com','System Administration,Monitoring,On-Call','10 years','Platform admin managing system health.','https://github.com/seed_admin3','ADMIN','2024-09-01 10:00:00'),
-(1184,'seed_Admin Four','seed_admin4@test.com','System Administration,Monitoring,On-Call','10 years','Platform admin managing system health.','https://github.com/seed_admin4','ADMIN','2024-09-01 10:00:00'),
-(1185,'seed_Admin Five','seed_admin5@test.com','System Administration,Monitoring,On-Call','10 years','Platform admin managing system health.','https://github.com/seed_admin5','ADMIN','2024-09-01 10:00:00'),
-(1186,'seed_Admin Six','seed_admin6@test.com','System Administration,Monitoring,On-Call','10 years','Platform admin managing system health.','https://github.com/seed_admin6','ADMIN','2024-09-01 10:00:00'),
-(1187,'seed_Admin Seven','seed_admin7@test.com','System Administration,Monitoring,On-Call','10 years','Platform admin managing system health.','https://github.com/seed_admin7','ADMIN','2024-09-01 10:00:00'),
-(1188,'seed_Admin Eight','seed_admin8@test.com','System Administration,Monitoring,On-Call','10 years','Platform admin managing system health.','https://github.com/seed_admin8','ADMIN','2024-09-01 10:00:00'),
-(1189,'seed_Admin Nine','seed_admin9@test.com','System Administration,Monitoring,On-Call','10 years','Platform admin managing system health.','https://github.com/seed_admin9','ADMIN','2024-09-01 10:00:00'),
-(1190,'seed_Admin Ten','seed_admin10@test.com','System Administration,Monitoring,On-Call','10 years','Platform admin managing system health.','https://github.com/seed_admin10','ADMIN','2024-09-01 10:00:00'),
-(1191,'seed_Admin Eleven','seed_admin11@test.com','System Administration,Monitoring,On-Call','10 years','Platform admin managing system health.','https://github.com/seed_admin11','ADMIN','2024-09-01 10:00:00'),
-(1192,'seed_Admin Twelve','seed_admin12@test.com','System Administration,Monitoring,On-Call','10 years','Platform admin managing system health.','https://github.com/seed_admin12','ADMIN','2024-09-01 10:00:00'),
-(1193,'seed_Admin Thirteen','seed_admin13@test.com','System Administration,Monitoring,On-Call','10 years','Platform admin managing system health.','https://github.com/seed_admin13','ADMIN','2024-09-01 10:00:00'),
-(1194,'seed_Admin Fourteen','seed_admin14@test.com','System Administration,Monitoring,On-Call','10 years','Platform admin managing system health.','https://github.com/seed_admin14','ADMIN','2024-09-01 10:00:00'),
-(1195,'seed_Admin Fifteen','seed_admin15@test.com','System Administration,Monitoring,On-Call','10 years','Platform admin managing system health.','https://github.com/seed_admin15','ADMIN','2024-09-01 10:00:00'),
-(1196,'seed_Admin Sixteen','seed_admin16@test.com','System Administration,Monitoring,On-Call','10 years','Platform admin managing system health.','https://github.com/seed_admin16','ADMIN','2024-09-01 10:00:00'),
-(1197,'seed_Admin Seventeen','seed_admin17@test.com','System Administration,Monitoring,On-Call','10 years','Platform admin managing system health.','https://github.com/seed_admin17','ADMIN','2024-09-01 10:00:00'),
-(1198,'seed_Admin Eighteen','seed_admin18@test.com','System Administration,Monitoring,On-Call','10 years','Platform admin managing system health.','https://github.com/seed_admin18','ADMIN','2024-09-01 10:00:00'),
-(1199,'seed_Admin Nineteen','seed_admin19@test.com','System Administration,Monitoring,On-Call','10 years','Platform admin managing system health.','https://github.com/seed_admin19','ADMIN','2024-09-01 10:00:00'),
-(1200,'seed_Admin Twenty','seed_admin20@test.com','System Administration,Monitoring,On-Call','10 years','Platform admin managing system health.','https://github.com/seed_admin20','ADMIN','2024-09-01 10:00:00');
+ 'https://linkedin.com/in/seed_sita','COFOUNDER','2024-09-01 10:00:00');
 
 SET foreign_key_checks = 1;
 -- END user-service/seed.sql
