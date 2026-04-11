@@ -6,6 +6,8 @@ import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.CacheManager;
+import org.springframework.lang.NonNull;
+import org.springframework.lang.Nullable;
 import org.springframework.cache.annotation.CachingConfigurer;
 import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.cache.interceptor.CacheErrorHandler;
@@ -28,6 +30,7 @@ import java.time.Duration;
 public class RedisConfig implements CachingConfigurer {
 
     @Bean
+    @SuppressWarnings("null")
     public CacheManager cacheManager(RedisConnectionFactory connectionFactory) {
         ObjectMapper objectMapper = new ObjectMapper();
         objectMapper.registerModule(new JavaTimeModule());
@@ -53,13 +56,12 @@ public class RedisConfig implements CachingConfigurer {
         template.setConnectionFactory(connectionFactory);
 
         StringRedisSerializer stringSerializer = new StringRedisSerializer();
-        Jackson2JsonRedisSerializer<Object> jackson2JsonRedisSerializer = new Jackson2JsonRedisSerializer<>(Object.class);
         ObjectMapper objectMapper = new ObjectMapper();
         objectMapper.activateDefaultTyping(
                 objectMapper.getPolymorphicTypeValidator(),
                 ObjectMapper.DefaultTyping.NON_FINAL,
                 JsonTypeInfo.As.PROPERTY);
-        jackson2JsonRedisSerializer.setObjectMapper(objectMapper);
+        Jackson2JsonRedisSerializer<Object> jackson2JsonRedisSerializer = new Jackson2JsonRedisSerializer<>(objectMapper, Object.class);
 
         template.setKeySerializer(stringSerializer);
         template.setValueSerializer(jackson2JsonRedisSerializer);
@@ -74,22 +76,22 @@ public class RedisConfig implements CachingConfigurer {
     public CacheErrorHandler errorHandler() {
         return new CacheErrorHandler() {
             @Override
-            public void handleCacheGetError(RuntimeException e, org.springframework.cache.Cache cache, Object key) {
+            public void handleCacheGetError(@NonNull RuntimeException e, @NonNull org.springframework.cache.Cache cache, @NonNull Object key) {
                 log.warn("Redis cache GET failed for cache: {}, key: {}. Falling back to DB. Error: {}",
                         cache.getName(), key, e.getMessage());
             }
             @Override
-            public void handleCachePutError(RuntimeException e, org.springframework.cache.Cache cache, Object key, Object value) {
+            public void handleCachePutError(@NonNull RuntimeException e, @NonNull org.springframework.cache.Cache cache, @NonNull Object key, @Nullable Object value) {
                 log.warn("Redis cache PUT failed for cache: {}, key: {}. Error: {}",
                         cache.getName(), key, e.getMessage());
             }
             @Override
-            public void handleCacheEvictError(RuntimeException e, org.springframework.cache.Cache cache, Object key) {
+            public void handleCacheEvictError(@NonNull RuntimeException e, @NonNull org.springframework.cache.Cache cache, @NonNull Object key) {
                 log.warn("Redis cache EVICT failed for cache: {}, key: {}. Error: {}",
                         cache.getName(), key, e.getMessage());
             }
             @Override
-            public void handleCacheClearError(RuntimeException e, org.springframework.cache.Cache cache) {
+            public void handleCacheClearError(@NonNull RuntimeException e, @NonNull org.springframework.cache.Cache cache) {
                 log.warn("Redis cache CLEAR failed for cache: {}. Error: {}", cache.getName(), e.getMessage());
             }
         };

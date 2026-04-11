@@ -1,19 +1,37 @@
 # ==========================================
-# MAVEN
+# MAVEN BUILD OUTPUT
 # ==========================================
 target/
 *.class
 *.jar
 *.war
 *.ear
-*.zip
-*.tar.gz
-*.rar
 pom.xml.tag
 pom.xml.releaseBackup
 pom.xml.versionsBackup
 pom.xml.next
 release.properties
+
+# ==========================================
+# ARCHIVE / COMPRESSED
+# ==========================================
+*.zip
+*.tar.gz
+*.rar
+
+# ==========================================
+# NODE / ANGULAR (frontend)
+# ==========================================
+node_modules/
+dist/
+tmp/
+out-tsc/
+bazel-out/
+.angular/
+.angular/cache
+npm-debug.log
+yarn-error.log
+package-lock.json
 
 # ==========================================
 # INTELLIJ IDEA
@@ -42,43 +60,85 @@ local.properties
 # ==========================================
 .vscode/
 *.code-workspace
+.history/
 
 # ==========================================
-# SPRING BOOT LOGS
+# SPRING BOOT LOGS & REPORTS
 # ==========================================
 *.log
 logs/
 spring.log
 
 # ==========================================
-# ENVIRONMENT & SECRETS (never push these)
+# TEST OUTPUT (never commit generated reports)
 # ==========================================
-*.env
+jacoco.exec
+**/target/site/jacoco/
+**/target/surefire-reports/
+**/target/failsafe-reports/
+coverage/
+__screenshots__/
+
+# ==========================================
+# ENVIRONMENT & SECRETS (NEVER PUSH THESE)
+# ==========================================
 .env
+*.env
+.env.*
+.env.local
+.env.*.local
 application-local.properties
 application-dev.properties
 application-prod.properties
+application-local.yml
+application-dev.yml
+application-prod.yml
 secrets.properties
+
+# ==========================================
+# DOCKER
+# ==========================================
+.pipeline_services
+.pipeline_infra
+.pipeline_restart
+.pipeline_skip
+
 # ==========================================
 # OS GENERATED FILES
 # ==========================================
-
 # Mac
 .DS_Store
 .AppleDouble
 .LSOverride
+._*
+.Spotlight-V100
+.Trashes
 
 # Windows
 Thumbs.db
 Thumbs.db:encdata
 Desktop.ini
 $RECYCLE.BIN/
+ehthumbs.db
 
 # Linux
 *~
+.nfs*
 
 # ==========================================
 # DATABASE
 # ==========================================
 *.sql.bak
 *.db
+
+# ==========================================
+# CONFIG REPO (managed in separate git repo)
+# ==========================================
+config-repo/.git/
+
+# ==========================================
+# TEMP / SCRATCH FILES
+# ==========================================
+mvn-test-output.txt
+fix_yamls.py
+*.orig

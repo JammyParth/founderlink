@@ -119,6 +119,7 @@ public class AuthController {
         return null;
     }
 
+    @SuppressWarnings("null")
     private void addRefreshTokenCookie(HttpServletResponse response, String refreshToken) {
         ResponseCookie cookie = ResponseCookie.from(refreshTokenProperties.getCookieName(), refreshToken)
                 .httpOnly(true)
@@ -131,6 +132,7 @@ public class AuthController {
         response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
     }
 
+    @SuppressWarnings("null")
     private void clearRefreshTokenCookie(HttpServletResponse response) {
         ResponseCookie cookie = ResponseCookie.from(refreshTokenProperties.getCookieName(), "")
                 .httpOnly(true)

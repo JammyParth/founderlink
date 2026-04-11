@@ -35,6 +35,7 @@ public class MessageQueryService {
      * Cache key = messageId.
      */
     @Cacheable(value = "messageById", key = "#id")
+    @SuppressWarnings("null")
     public MessageResponseDTO getMessageById(Long id) {
         log.info("QUERY - getMessageById: id={} (cache miss, hitting DB)", id);
         Message message = messageRepository.findById(id)
@@ -64,6 +65,7 @@ public class MessageQueryService {
                 .map(this::mapToResponseDTO);
     }
 
+    @SuppressWarnings("unused")
     public List<MessageResponseDTO> getConversationFallback(Long user1, Long user2, Throwable throwable) {
         log.error("Circuit breaker fallback - getConversation. Reason: {}", throwable.getMessage());
         return Collections.emptyList();
@@ -87,6 +89,7 @@ public class MessageQueryService {
         return messageRepository.findConversationPartnersPage(userId, pageable);
     }
 
+    @SuppressWarnings("unused")
     public List<Long> getConversationPartnersFallback(Long userId, Throwable throwable) {
         log.error("Circuit breaker fallback - getConversationPartners. Reason: {}", throwable.getMessage());
         return Collections.emptyList();
@@ -109,7 +112,7 @@ public class MessageQueryService {
         log.info("QUERY - getConversationCursor: u1={}, u2={}, before={}, after={}, size={}",
                  user1, user2, beforeId, afterId, size);
 
-        int safeSize = Math.min(Math.max(size, 1), 50);
+        int safeSize = Math.clamp(size, 1, 50);
         Pageable pageable = PageRequest.of(0, safeSize);
         List<Message> raw;
 

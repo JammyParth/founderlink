@@ -9,7 +9,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.cache.CacheManager;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.TestPropertySource;
@@ -36,6 +36,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
         "eureka.client.enabled=false",
         "spring.cloud.config.enabled=false"
 })
+@SuppressWarnings("null")
 class WalletIntegrationTest {
 
     @Autowired
@@ -44,13 +45,13 @@ class WalletIntegrationTest {
     @Autowired
     private ObjectMapper objectMapper;
 
-    @MockBean
+    @MockitoBean
     private WalletRepository walletRepository;
 
-    @MockBean
+    @MockitoBean
     private WalletTransactionRepository walletTransactionRepository;
 
-    @MockBean
+    @MockitoBean
     private CacheManager cacheManager;
 
     @Test

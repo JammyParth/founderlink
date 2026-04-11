@@ -6,7 +6,6 @@ import com.founderlink.messaging.dto.MessageResponseDTO;
 import com.founderlink.messaging.dto.UserDTO;
 import com.founderlink.messaging.entity.Message;
 import com.founderlink.messaging.event.MessageEventPublisher;
-import com.founderlink.messaging.event.MessageWebSocketPublisher;
 import com.founderlink.messaging.exception.InvalidMessageException;
 import com.founderlink.messaging.repository.MessageRepository;
 import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
@@ -25,16 +24,13 @@ public class MessageCommandService {
     private final MessageRepository           messageRepository;
     private final UserServiceClient           userServiceClient;
     private final MessageEventPublisher       messageEventPublisher;
-    private final MessageWebSocketPublisher   wsPublisher;
 
     public MessageCommandService(MessageRepository messageRepository,
                                   UserServiceClient userServiceClient,
-                                  MessageEventPublisher messageEventPublisher,
-                                  MessageWebSocketPublisher wsPublisher) {
+                                  MessageEventPublisher messageEventPublisher) {
         this.messageRepository     = messageRepository;
         this.userServiceClient     = userServiceClient;
         this.messageEventPublisher = messageEventPublisher;
-        this.wsPublisher           = wsPublisher;
     }
 
     /**
@@ -43,7 +39,6 @@ public class MessageCommandService {
      * <ol>
      *   <li>Validate sender ≠ receiver and both users exist (via Feign + circuit breaker)</li>
      *   <li>Persist to DB ({@code saveAndFlush} — synchronous, source of truth)</li>
-     *   <li>Push via STOMP WebSocket to both conversation participants (non-fatal on failure)</li>
      *   <li>Publish {@code message.sent} RabbitMQ event for notification-service (non-fatal)</li>
      *   <li>Evict the relevant Redis caches</li>
      * </ol>
@@ -81,12 +76,7 @@ public class MessageCommandService {
         Message saved = messageRepository.saveAndFlush(message);
         MessageResponseDTO responseDTO = mapToResponseDTO(saved);
 
-        // ── Step 4: STOMP push (non-fatal) ───────────────────────────────────
-        // Both sender and receiver share the same normalized topic.
-        // Frontend deduplicates by message id, so sender's own write is idempotent.
-        wsPublisher.pushToConversation(saved.getSenderId(), saved.getReceiverId(), responseDTO);
-
-        // ── RabbitMQ event for notification-service (unchanged) ───────────────
+        // ── RabbitMQ event for notification-service ───────────────────────────
         try {
             String senderName = sender.getName() != null ? sender.getName() : "Someone";
             messageEventPublisher.publishMessageSent(

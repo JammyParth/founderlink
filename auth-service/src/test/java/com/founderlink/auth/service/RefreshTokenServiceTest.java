@@ -3,6 +3,7 @@ package com.founderlink.auth.service;
 import com.founderlink.auth.config.RefreshTokenProperties;
 import com.founderlink.auth.entity.RefreshToken;
 import com.founderlink.auth.exception.ExpiredRefreshTokenException;
+import com.founderlink.auth.exception.InvalidRefreshTokenException;
 import com.founderlink.auth.exception.RevokedRefreshTokenException;
 import com.founderlink.auth.repository.RefreshTokenRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -25,6 +26,7 @@ import java.util.Optional;
 import java.util.HexFormat;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.times;
@@ -94,6 +96,112 @@ class RefreshTokenServiceTest {
         );
 
         assertThat(exception.getMessage()).isEqualTo("Refresh token has been revoked");
+    }
+
+    @Test
+    void validateTokenShouldThrowInvalidWhenTokenNotFound() {
+        when(refreshTokenRepository.findByToken(any())).thenReturn(Optional.empty());
+
+        assertThrows(
+                InvalidRefreshTokenException.class,
+                () -> refreshTokenService.validateToken("unknown-token")
+        );
+    }
+
+    @Test
+    void validateTokenShouldThrowInvalidWhenTokenIsBlank() {
+        assertThatThrownBy(() -> refreshTokenService.validateToken("   "))
+                .isInstanceOf(InvalidRefreshTokenException.class)
+                .hasMessageContaining("missing");
+    }
+
+    @Test
+    void validateTokenShouldThrowInvalidWhenTokenIsEmpty() {
+        assertThatThrownBy(() -> refreshTokenService.validateToken(""))
+                .isInstanceOf(InvalidRefreshTokenException.class);
+    }
+
+    @Test
+    void createTokenShouldPersistNewRefreshToken() {
+        when(refreshTokenRepository.countByUserIdAndRevokedFalse(55L)).thenReturn(0L);
+        when(refreshTokenRepository.save(any(RefreshToken.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        String rawToken = refreshTokenService.createToken(55L);
+
+        assertThat(rawToken).isNotBlank();
+        verify(refreshTokenRepository).save(refreshTokenCaptor.capture());
+
+        RefreshToken saved = refreshTokenCaptor.getValue();
+        assertThat(saved.getUserId()).isEqualTo(55L);
+        assertThat(saved.isRevoked()).isFalse();
+        assertThat(saved.getToken()).hasSize(64); // SHA-256 hex = 64 chars
+        assertThat(saved.getExpiryDate()).isEqualTo(Instant.now(clock).plus(Duration.ofDays(30)));
+    }
+
+    @Test
+    void createTokenShouldEvictOldestSessionWhenMaxSessionsReached() {
+        RefreshToken oldest = RefreshToken.builder()
+                .id(5L)
+                .token(hash("oldest-token"))
+                .userId(55L)
+                .expiryDate(Instant.parse("2026-04-18T10:15:30Z"))
+                .revoked(false)
+                .build();
+
+        when(refreshTokenRepository.countByUserIdAndRevokedFalse(55L)).thenReturn(5L);
+        when(refreshTokenRepository.findOldestActiveToken(55L)).thenReturn(Optional.of(oldest));
+        when(refreshTokenRepository.save(any(RefreshToken.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        String rawToken = refreshTokenService.createToken(55L);
+
+        assertThat(rawToken).isNotBlank();
+
+        // First save = evict oldest, second save = store new token
+        verify(refreshTokenRepository, times(2)).save(refreshTokenCaptor.capture());
+        RefreshToken evicted = refreshTokenCaptor.getAllValues().get(0);
+        assertThat(evicted.isRevoked()).isTrue();
+        assertThat(evicted.getUserId()).isEqualTo(55L);
+    }
+
+    @Test
+    void revokeTokenShouldMarkTokenAsRevoked() {
+        RefreshToken activeToken = RefreshToken.builder()
+                .id(7L)
+                .token(hash("active-refresh"))
+                .userId(22L)
+                .expiryDate(Instant.parse("2026-04-18T10:15:30Z"))
+                .revoked(false)
+                .build();
+
+        when(refreshTokenRepository.findByTokenForUpdate(activeToken.getToken()))
+                .thenReturn(Optional.of(activeToken));
+        when(refreshTokenRepository.save(any(RefreshToken.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        refreshTokenService.revokeToken("active-refresh");
+
+        verify(refreshTokenRepository).save(refreshTokenCaptor.capture());
+        RefreshToken saved = refreshTokenCaptor.getValue();
+        assertThat(saved.isRevoked()).isTrue();
+        assertThat(saved.getRevokedAt()).isEqualTo(Instant.now(clock));
+    }
+
+    @Test
+    void revokeTokenShouldThrowWhenTokenIsAlreadyRevoked() {
+        RefreshToken revokedToken = RefreshToken.builder()
+                .id(8L)
+                .token(hash("already-revoked"))
+                .userId(22L)
+                .expiryDate(Instant.parse("2026-04-18T10:15:30Z"))
+                .revoked(true)
+                .build();
+
+        when(refreshTokenRepository.findByTokenForUpdate(revokedToken.getToken()))
+                .thenReturn(Optional.of(revokedToken));
+
+        assertThrows(
+                RevokedRefreshTokenException.class,
+                () -> refreshTokenService.revokeToken("already-revoked")
+        );
     }
 
     @Test

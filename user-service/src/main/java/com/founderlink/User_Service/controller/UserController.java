@@ -1,4 +1,4 @@
-package com.founderlink.User_Service.controller;
+package com.founderlink.User_Service.controller; // NOSONAR
 
 import com.founderlink.User_Service.dto.UserRequestAuthDto;
 import com.founderlink.User_Service.dto.UserRequestDto;
@@ -169,13 +169,15 @@ public class UserController {
         return request.getParameterMap().containsKey("page");
     }
 
+    @SuppressWarnings("null")
     private Pageable buildPageable(int page, int size, String sort, String defaultProperty, Sort.Direction defaultDirection) {
         int safePage = Math.max(page, 0);
-        int safeSize = Math.min(Math.max(size, 1), 50);
+        int safeSize = Math.clamp(size, 1, 50);
         Sort resolvedSort = resolveSort(sort, defaultProperty, defaultDirection);
         return PageRequest.of(safePage, safeSize, resolvedSort);
     }
 
+    @SuppressWarnings("null")
     private Sort resolveSort(String sort, String defaultProperty, Sort.Direction defaultDirection) {
         if (sort == null || sort.isBlank()) {
             return Sort.by(defaultDirection, defaultProperty);

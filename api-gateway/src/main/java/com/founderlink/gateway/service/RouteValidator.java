@@ -28,14 +28,11 @@ public class RouteValidator {
             return false;
         }
 
-        if (isPublicReadRequest(request)
-                && matchesConfiguredPath(requestPath, gatewaySecurityProperties.getPublicGetPaths())) {
-            return false;
-        }
-
-        return true;
+        return !(isPublicReadRequest(request)
+                && matchesConfiguredPath(requestPath, gatewaySecurityProperties.getPublicGetPaths()));
     }
 
+    @SuppressWarnings("null")
     private boolean matchesConfiguredPath(String requestPath, List<String> configuredPaths) {
         return safePaths(configuredPaths).stream()
                 .filter(StringUtils::hasText)

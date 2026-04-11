@@ -32,6 +32,7 @@ import com.founderlink.team.repository.InvitationRepository;
 import com.founderlink.team.repository.TeamMemberRepository;
 
 @ExtendWith(MockitoExtension.class)
+@SuppressWarnings("null")
 class RemoveTeamMemberTest {
 
     @Mock

@@ -68,6 +68,9 @@ class AuthServiceTest {
     private com.founderlink.auth.publisher.PasswordResetEventPublisher passwordResetEventPublisher;
 
     @Mock
+    private com.founderlink.auth.publisher.UserRegisteredEventPublisher userRegisteredEventPublisher;
+
+    @Mock
     private Authentication authentication;
 
     @InjectMocks

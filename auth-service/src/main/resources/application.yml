@@ -1,5 +1,5 @@
 server:
-  port: 8082
+  port: 8089
 
 spring:
   application:
@@ -13,21 +13,6 @@ eureka:
       defaultZone: http://eureka-server:8761/eureka/
   instance:
     prefer-ip-address: true
-
-#   cloud:
-#     config:
-#       enabled: false
-#     openfeign:
-#         client:
-#           config:
-#             user-service:
-#               connectTimeout: 2000
-#               readTimeout: 5000
-#               loggerLevel: basic
-#   datasource:
-#       url: jdbc:mysql://localhost:3306/auth_service_db?createDatabaseIfNotExist=true
-#       username: root
-#       password: system
 #       driver-class-name: com.mysql.cj.jdbc.Driver
 #   jpa:
 #       hibernate:

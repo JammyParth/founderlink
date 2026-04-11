@@ -41,6 +41,8 @@ import lombok.extern.slf4j.Slf4j;
 @Tag(name = "Invitation", description = "APIs for managing team invitations")
 public class InvitationController {
 
+    private static final String ROLE_FOUNDER = "ROLE_FOUNDER";
+
     private final InvitationService invitationService;
 
     // SEND INVITATION
@@ -62,7 +64,7 @@ public class InvitationController {
             @Valid @RequestBody InvitationRequestDto requestDto) {
 
         log.info("POST /teams/invite - sendInvitation by founderId: {}", founderId);
-        if (!userRole.equals("ROLE_FOUNDER")) {
+        if (!userRole.equals(ROLE_FOUNDER)) {
             log.warn("Access denied for sendInvitation - role: {}", userRole);
             throw new ForbiddenAccessException(
                     "Access denied. Only FOUNDERS can send invitations");
@@ -96,7 +98,7 @@ public class InvitationController {
             @PathVariable Long id) {
 
         log.info("PUT /teams/invitations/{}/cancel - founderId: {}", id, founderId);
-        if (!userRole.equals("ROLE_FOUNDER")) {
+        if (!userRole.equals(ROLE_FOUNDER)) {
             log.warn("Access denied for cancelInvitation - role: {}", userRole);
             throw new ForbiddenAccessException(
                     "Access denied. Only FOUNDERS can cancel invitations");
@@ -184,7 +186,6 @@ public class InvitationController {
     }
 
     // GET INVITATIONS BY STARTUP ID
-    // GET /teams/invitations/startup/{startupId}
     // Called by → FOUNDER
 
     @Operation(summary = "Get invitations by startup ID", description = "Fetches invitations for a specific startup.")
@@ -204,7 +205,7 @@ public class InvitationController {
             HttpServletRequest request) {
 
         log.info("GET /teams/invitations/startup/{} - founderId: {}", startupId, founderId);
-        if (!userRole.equals("ROLE_FOUNDER")) {
+        if (!userRole.equals(ROLE_FOUNDER)) {
             log.warn("Access denied for getInvitationsByStartupId - role: {}", userRole);
             throw new ForbiddenAccessException(
                     "Access denied. Only FOUNDERS can view startup invitations");
@@ -228,13 +229,15 @@ public class InvitationController {
         return request.getParameterMap().containsKey("page");
     }
 
+    @SuppressWarnings("null")
     private Pageable buildPageable(int page, int size, String sort, String defaultProperty, Sort.Direction defaultDirection) {
         int safePage = Math.max(page, 0);
-        int safeSize = Math.min(Math.max(size, 1), 50);
+        int safeSize = Math.clamp(size, 1, 50);
         Sort resolvedSort = resolveSort(sort, defaultProperty, defaultDirection);
         return PageRequest.of(safePage, safeSize, resolvedSort);
     }
 
+    @SuppressWarnings("null")
     private Sort resolveSort(String sort, String defaultProperty, Sort.Direction defaultDirection) {
         if (sort == null || sort.isBlank()) {
             return Sort.by(defaultDirection, defaultProperty);

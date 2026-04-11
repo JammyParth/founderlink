@@ -16,6 +16,7 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 @Transactional(readOnly = true)
 @RequiredArgsConstructor
+@SuppressWarnings("null")
 public class PaymentQueryService {
 
     private final PaymentRepository paymentRepository;

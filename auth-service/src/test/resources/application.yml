@@ -1,0 +1,44 @@
+spring:
+  cloud:
+    config:
+      enabled: false
+  datasource:
+    url: jdbc:h2:mem:authdb;MODE=MySQL;DB_CLOSE_DELAY=-1
+    driver-class-name: org.h2.Driver
+    username: sa
+    password: ""
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    show-sql: false
+  rabbitmq:
+    host: localhost
+    port: 5672
+
+eureka:
+  client:
+    enabled: false
+
+jwt:
+  secret: VGhpc0lzQVN0cm9uZ0pXVFNlY3JldEtleUZvclRlc3RzMTIzNDU2Nzg5MDEy
+  access-token-expiration: 15m
+
+security:
+  refresh-token:
+    expiration: 30d
+    cookie-name: refresh_token
+    cookie-path: /auth
+    cookie-same-site: None
+    cookie-secure: true
+
+seed:
+  admin:
+    enabled: false
+    name: Admin
+    email: admin@founderlink.com
+    password: Admin@Pass1
+
+user-service:
+  client:
+    connect-timeout-ms: 2000
+    read-timeout-ms: 5000

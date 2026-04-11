@@ -52,6 +52,7 @@ public class TeamMemberCommandService {
         @CacheEvict(value = "invitationsByUser",    key = "#userId"),
         @CacheEvict(value = "invitationsByStartup", allEntries = true)
     })
+    @SuppressWarnings("null")
     public TeamMemberResponseDto joinTeam(Long userId, JoinTeamRequestDto requestDto) {
         log.info("COMMAND - joinTeam: userId={}, invitationId={}", userId, requestDto.getInvitationId());
 
@@ -107,6 +108,7 @@ public class TeamMemberCommandService {
         @CacheEvict(value = "memberHistory",     allEntries = true),
         @CacheEvict(value = "activeMemberRoles", allEntries = true)
     })
+    @SuppressWarnings("null")
     public void removeTeamMember(Long teamMemberId, Long founderId) {
         log.info("COMMAND - removeTeamMember: teamMemberId={}, founderId={}", teamMemberId, founderId);
 
@@ -125,6 +127,7 @@ public class TeamMemberCommandService {
         teamMemberRepository.save(teamMember);
     }
 
+    @SuppressWarnings("unused")
     public void removeTeamMemberFallback(Long teamMemberId, Long founderId, Throwable throwable) {
         if (throwable instanceof TeamMemberNotFoundException
                 || throwable instanceof ForbiddenAccessException

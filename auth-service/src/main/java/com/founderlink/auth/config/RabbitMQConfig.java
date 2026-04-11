@@ -55,6 +55,7 @@ public class RabbitMQConfig {
     }
 
     @Bean
+    @SuppressWarnings("null")
     public RabbitTemplate rabbitTemplate(ConnectionFactory connectionFactory) {
         RabbitTemplate rabbitTemplate = new RabbitTemplate(connectionFactory);
         rabbitTemplate.setMessageConverter(messageConverter());

@@ -15,6 +15,8 @@ import org.springframework.data.redis.connection.RedisConnectionFactory;
 import org.springframework.data.redis.serializer.GenericJackson2JsonRedisSerializer;
 import org.springframework.data.redis.serializer.RedisSerializationContext;
 
+import org.springframework.lang.NonNull;
+import org.springframework.lang.Nullable;
 import lombok.extern.slf4j.Slf4j;
 
 import java.time.Duration;
@@ -25,6 +27,7 @@ import java.time.Duration;
 public class RedisConfig implements CachingConfigurer {
 
     @Bean
+    @SuppressWarnings("null")
     public CacheManager cacheManager(RedisConnectionFactory connectionFactory) {
         ObjectMapper objectMapper = new ObjectMapper();
         objectMapper.registerModule(new JavaTimeModule());
@@ -49,25 +52,25 @@ public class RedisConfig implements CachingConfigurer {
     public CacheErrorHandler errorHandler() {
         return new CacheErrorHandler() {
             @Override
-            public void handleCacheGetError(RuntimeException exception, org.springframework.cache.Cache cache, Object key) {
+            public void handleCacheGetError(@NonNull RuntimeException exception, @NonNull org.springframework.cache.Cache cache, @NonNull Object key) {
                 log.warn("Redis cache GET failed for cache: {}, key: {}. Falling back to DB. Error: {}", 
                         cache.getName(), key, exception.getMessage());
             }
 
             @Override
-            public void handleCachePutError(RuntimeException exception, org.springframework.cache.Cache cache, Object key, Object value) {
+            public void handleCachePutError(@NonNull RuntimeException exception, @NonNull org.springframework.cache.Cache cache, @NonNull Object key, @Nullable Object value) {
                 log.warn("Redis cache PUT failed for cache: {}, key: {}. Error: {}", 
                         cache.getName(), key, exception.getMessage());
             }
 
             @Override
-            public void handleCacheEvictError(RuntimeException exception, org.springframework.cache.Cache cache, Object key) {
+            public void handleCacheEvictError(@NonNull RuntimeException exception, @NonNull org.springframework.cache.Cache cache, @NonNull Object key) {
                 log.warn("Redis cache EVICT failed for cache: {}, key: {}. Error: {}", 
                         cache.getName(), key, exception.getMessage());
             }
 
             @Override
-            public void handleCacheClearError(RuntimeException exception, org.springframework.cache.Cache cache) {
+            public void handleCacheClearError(@NonNull RuntimeException exception, @NonNull org.springframework.cache.Cache cache) {
                 log.warn("Redis cache CLEAR failed for cache: {}. Error: {}", 
                         cache.getName(), exception.getMessage());
             }

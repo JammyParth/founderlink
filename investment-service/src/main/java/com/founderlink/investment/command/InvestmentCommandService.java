@@ -32,6 +32,7 @@ import lombok.extern.slf4j.Slf4j;
 @Service
 @Transactional
 @RequiredArgsConstructor
+@SuppressWarnings("null")
 public class InvestmentCommandService {
 
     private final InvestmentRepository investmentRepository;
@@ -74,6 +75,7 @@ public class InvestmentCommandService {
      * Re-throws business exceptions (4xx) — they must not be swallowed.
      * Wraps infrastructure failures (5xx/network) as StartupServiceUnavailableException.
      */
+    @SuppressWarnings("unused")
     public InvestmentResponseDto createInvestmentFallback(Long investorId, InvestmentRequestDto requestDto,
                                                            Throwable throwable) {
         if (throwable instanceof StartupNotFoundException
@@ -123,6 +125,7 @@ public class InvestmentCommandService {
         return investmentMapper.toResponseDto(saved);
     }
 
+    @SuppressWarnings("unused")
     public InvestmentResponseDto updateInvestmentStatusFallback(Long investmentId, Long founderId,
                                                                   InvestmentStatusUpdateDto statusUpdateDto,
                                                                   Throwable throwable) {

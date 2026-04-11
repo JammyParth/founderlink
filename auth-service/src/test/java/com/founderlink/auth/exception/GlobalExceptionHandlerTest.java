@@ -6,19 +6,26 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.mock.http.MockHttpInputMessage;
 import org.springframework.security.access.AccessDeniedException;
+import org.springframework.validation.BeanPropertyBindingResult;
+import org.springframework.validation.FieldError;
+import org.springframework.web.bind.MethodArgumentNotValidException;
+
+import java.nio.charset.StandardCharsets;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
+@SuppressWarnings("null")
 class GlobalExceptionHandlerTest {
 
     private final GlobalExceptionHandler handler = new GlobalExceptionHandler();
 
     @Test
     void handleAllShouldReturnGenericMessageForAdminSeedingException() {
-
         HttpServletRequest request = mock(HttpServletRequest.class);
         when(request.getRequestURI()).thenReturn("/test");
 
@@ -35,7 +42,6 @@ class GlobalExceptionHandlerTest {
 
     @Test
     void handleAllShouldReturnGenericMessageForGenericException() {
-
         HttpServletRequest request = mock(HttpServletRequest.class);
         when(request.getRequestURI()).thenReturn("/error");
 
@@ -104,5 +110,169 @@ class GlobalExceptionHandlerTest {
 
         Assertions.assertNotNull(response.getBody());
         assertThat(response.getBody().message()).isEqualTo("Access denied");
+    }
+
+    @Test
+    void handleValidationShouldReturn400WithFieldMessages() throws Exception {
+        HttpServletRequest request = mock(HttpServletRequest.class);
+        when(request.getRequestURI()).thenReturn("/auth/register");
+
+        Object target = new Object();
+        BeanPropertyBindingResult bindingResult = new BeanPropertyBindingResult(target, "registerRequest");
+        bindingResult.addError(new FieldError("registerRequest", "email", "Invalid email format"));
+        bindingResult.addError(new FieldError("registerRequest", "name", "Name is required"));
+
+        MethodArgumentNotValidException ex = new MethodArgumentNotValidException(null, bindingResult);
+
+        ResponseEntity<ApiError> response = handler.handleValidation(ex, request);
+
+        assertThat(response.getStatusCode().value()).isEqualTo(400);
+        assertThat(response.getBody()).isNotNull();
+        assertThat(response.getBody().message()).contains("Invalid email format");
+    }
+
+    @Test
+    void handleBadRequestShouldReturn400ForHttpMessageNotReadable() {
+        HttpServletRequest request = mock(HttpServletRequest.class);
+        when(request.getRequestURI()).thenReturn("/auth/login");
+
+        HttpMessageNotReadableException ex = new HttpMessageNotReadableException(
+                "Malformed JSON",
+                new MockHttpInputMessage("{}".getBytes(StandardCharsets.UTF_8))
+        );
+
+        ResponseEntity<ApiError> response = handler.handleBadRequest(ex, request);
+
+        assertThat(response.getStatusCode().value()).isEqualTo(400);
+        assertThat(response.getBody()).isNotNull();
+        assertThat(response.getBody().message()).isEqualTo("Invalid request");
+    }
+
+    @Test
+    void handleBadRequestShouldReturn400ForIllegalArgument() {
+        HttpServletRequest request = mock(HttpServletRequest.class);
+        when(request.getRequestURI()).thenReturn("/auth/register");
+
+        ResponseEntity<ApiError> response = handler.handleBadRequest(
+                new IllegalArgumentException("Invalid role selection"), request);
+
+        assertThat(response.getStatusCode().value()).isEqualTo(400);
+        assertThat(response.getBody().message()).isEqualTo("Invalid request");
+    }
+
+    @Test
+    void handleUnauthorizedRefreshTokenShouldReturn401ForInvalidToken() {
+        HttpServletRequest request = mock(HttpServletRequest.class);
+        when(request.getRequestURI()).thenReturn("/auth/refresh");
+
+        ResponseEntity<ApiError> response =
+                handler.handleUnauthorizedRefreshToken(request);
+
+        assertThat(response.getStatusCode().value()).isEqualTo(401);
+        assertThat(response.getBody().message()).isEqualTo("Invalid or expired refresh token");
+    }
+
+    @Test
+    void handleRevokedRefreshTokenShouldReturn403() {
+        HttpServletRequest request = mock(HttpServletRequest.class);
+        when(request.getRequestURI()).thenReturn("/auth/refresh");
+
+        ResponseEntity<ApiError> response =
+                handler.handleRevokedRefreshToken(request);
+
+        assertThat(response.getStatusCode().value()).isEqualTo(403);
+        assertThat(response.getBody().message()).isEqualTo("Refresh token has been revoked");
+    }
+
+    @Test
+    void handleInvalidOrExpiredPinShouldReturn400ForInvalidPin() {
+        HttpServletRequest request = mock(HttpServletRequest.class);
+        when(request.getRequestURI()).thenReturn("/auth/reset-password");
+
+        ResponseEntity<ApiError> response = handler.handleInvalidOrExpiredPin(
+                new InvalidPasswordResetPinException("Invalid PIN or email"), request);
+
+        assertThat(response.getStatusCode().value()).isEqualTo(400);
+        assertThat(response.getBody().message()).isEqualTo("Invalid PIN or email");
+    }
+
+    @Test
+    void handleInvalidOrExpiredPinShouldReturn400ForExpiredPin() {
+        HttpServletRequest request = mock(HttpServletRequest.class);
+        when(request.getRequestURI()).thenReturn("/auth/reset-password");
+
+        ResponseEntity<ApiError> response = handler.handleInvalidOrExpiredPin(
+                new ExpiredPasswordResetPinException("PIN has expired"), request);
+
+        assertThat(response.getStatusCode().value()).isEqualTo(400);
+        assertThat(response.getBody().message()).isEqualTo("PIN has expired");
+    }
+
+    @Test
+    void handleUsedPinShouldReturn400() {
+        HttpServletRequest request = mock(HttpServletRequest.class);
+        when(request.getRequestURI()).thenReturn("/auth/reset-password");
+
+        ResponseEntity<ApiError> response = handler.handleUsedPin(
+                new UsedPasswordResetPinException("PIN has already been used"), request);
+
+        assertThat(response.getStatusCode().value()).isEqualTo(400);
+        assertThat(response.getBody().message()).isEqualTo("PIN has already been used");
+    }
+
+    @Test
+    void handleUserServiceBadRequestShouldReturn400() {
+        HttpServletRequest request = mock(HttpServletRequest.class);
+        when(request.getRequestURI()).thenReturn("/auth/register");
+
+        ResponseEntity<ApiError> response = handler.handleUserServiceBadRequest(
+                new UserServiceBadRequestException("UserClient#createUser", "bad input"), request);
+
+        assertThat(response.getStatusCode().value()).isEqualTo(400);
+    }
+
+    @Test
+    void handleUserServiceNotFoundShouldReturn404() {
+        HttpServletRequest request = mock(HttpServletRequest.class);
+        when(request.getRequestURI()).thenReturn("/auth/register");
+
+        ResponseEntity<ApiError> response = handler.handleUserServiceNotFound(
+                new UserServiceNotFoundException("UserClient#getUser", "not found"), request);
+
+        assertThat(response.getStatusCode().value()).isEqualTo(404);
+    }
+
+    @Test
+    void handleUserServiceConflictShouldReturn409() {
+        HttpServletRequest request = mock(HttpServletRequest.class);
+        when(request.getRequestURI()).thenReturn("/auth/register");
+
+        ResponseEntity<ApiError> response = handler.handleUserServiceConflict(
+                new UserServiceConflictException("UserClient#createUser", "email conflict"), request);
+
+        assertThat(response.getStatusCode().value()).isEqualTo(409);
+    }
+
+    @Test
+    void handleUserServiceUnavailableShouldReturn503() {
+        HttpServletRequest request = mock(HttpServletRequest.class);
+        when(request.getRequestURI()).thenReturn("/auth/register");
+
+        ResponseEntity<ApiError> response = handler.handleUserServiceUnavailable(
+                new UserServiceUnavailableException("UserClient#createUser", "service down"), request);
+
+        assertThat(response.getStatusCode().value()).isEqualTo(503);
+    }
+
+    @Test
+    void handleUserServiceFailureShouldReturn503ForClientException() {
+        HttpServletRequest request = mock(HttpServletRequest.class);
+        when(request.getRequestURI()).thenReturn("/auth/register");
+
+        ResponseEntity<ApiError> response = handler.handleUserServiceFailure(
+                new UserServiceClientException("UserClient#createUser", 502, "bad gateway"), request);
+
+        assertThat(response.getStatusCode().value()).isEqualTo(503);
+        assertThat(response.getBody().message()).isEqualTo("Dependent service is unavailable");
     }
 }

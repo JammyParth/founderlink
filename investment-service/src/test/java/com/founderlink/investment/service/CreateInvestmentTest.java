@@ -33,6 +33,7 @@ import com.founderlink.investment.mapper.InvestmentMapper;
 import com.founderlink.investment.repository.InvestmentRepository;
 
 @ExtendWith(MockitoExtension.class)
+@SuppressWarnings("null")
 class CreateInvestmentTest {
 
     @Mock

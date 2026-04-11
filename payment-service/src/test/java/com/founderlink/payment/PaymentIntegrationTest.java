@@ -2,18 +2,16 @@ package com.founderlink.payment;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.founderlink.payment.client.WalletServiceClient;
-import com.founderlink.payment.dto.request.ConfirmPaymentRequest;
 import com.founderlink.payment.dto.request.CreateOrderRequest;
 import com.founderlink.payment.entity.Payment;
 import com.founderlink.payment.entity.PaymentStatus;
 import com.founderlink.payment.repository.PaymentRepository;
-import com.razorpay.Order;
 import com.razorpay.RazorpayClient;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -28,6 +26,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @SpringBootTest
 @AutoConfigureMockMvc
+@SuppressWarnings("null")
 class PaymentIntegrationTest {
 
     @Autowired
@@ -36,13 +35,13 @@ class PaymentIntegrationTest {
     @Autowired
     private ObjectMapper objectMapper;
 
-    @MockBean
+    @MockitoBean
     private PaymentRepository paymentRepository;
 
-    @MockBean
+    @MockitoBean
     private RazorpayClient razorpayClient;
 
-    @MockBean
+    @MockitoBean
     private WalletServiceClient walletServiceClient;
 
     @Test

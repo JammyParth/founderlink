@@ -10,10 +10,10 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.test.util.ReflectionTestUtils;
 
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
+@SuppressWarnings("null")
 class TeamEventPublisherTest {
 
     @Mock
@@ -43,9 +43,9 @@ class TeamEventPublisherTest {
         teamEventPublisher.publishTeamInviteEvent(event);
 
         verify(rabbitTemplate, times(1)).convertAndSend(
-                eq(EXCHANGE),
-                eq(INVITE_ROUTING_KEY),
-                eq(event)
+                EXCHANGE,
+                INVITE_ROUTING_KEY,
+                event
         );
     }
 
@@ -59,9 +59,9 @@ class TeamEventPublisherTest {
         teamEventPublisher.publishTeamMemberAcceptedEvent(event);
 
         verify(rabbitTemplate, times(1)).convertAndSend(
-                eq(EXCHANGE),
-                eq(ACCEPTED_ROUTING_KEY),
-                eq(event)
+                EXCHANGE,
+                ACCEPTED_ROUTING_KEY,
+                event
         );
     }
 
@@ -75,9 +75,9 @@ class TeamEventPublisherTest {
         teamEventPublisher.publishTeamMemberRejectedEvent(event);
 
         verify(rabbitTemplate, times(1)).convertAndSend(
-                eq(EXCHANGE),
-                eq(REJECTED_ROUTING_KEY),
-                eq(event)
+                EXCHANGE,
+                REJECTED_ROUTING_KEY,
+                event
         );
     }
 
@@ -86,11 +86,11 @@ class TeamEventPublisherTest {
     void publishTeamInviteEvent_HandlesException() {
         TeamInviteEvent event = new TeamInviteEvent(1L, 100L, "CTO");
         doThrow(new RuntimeException("RabbitMQ connection failed"))
-                .when(rabbitTemplate).convertAndSend(eq(EXCHANGE), eq(INVITE_ROUTING_KEY), eq(event));
+                .when(rabbitTemplate).convertAndSend(EXCHANGE, INVITE_ROUTING_KEY, event);
 
         org.junit.jupiter.api.Assertions.assertThrows(IllegalStateException.class, () -> teamEventPublisher.publishTeamInviteEvent(event));
 
-        verify(rabbitTemplate, times(1)).convertAndSend(eq(EXCHANGE), eq(INVITE_ROUTING_KEY), eq(event));
+        verify(rabbitTemplate, times(1)).convertAndSend(EXCHANGE, INVITE_ROUTING_KEY, event);
     }
 
     @Test
@@ -100,11 +100,11 @@ class TeamEventPublisherTest {
                 1L, 101L, 5L, 300L, "CTO"
         );
         doThrow(new RuntimeException("RabbitMQ connection failed"))
-                .when(rabbitTemplate).convertAndSend(eq(EXCHANGE), eq(ACCEPTED_ROUTING_KEY), eq(event));
+                .when(rabbitTemplate).convertAndSend(EXCHANGE, ACCEPTED_ROUTING_KEY, event);
 
         org.junit.jupiter.api.Assertions.assertThrows(IllegalStateException.class, () -> teamEventPublisher.publishTeamMemberAcceptedEvent(event));
 
-        verify(rabbitTemplate, times(1)).convertAndSend(eq(EXCHANGE), eq(ACCEPTED_ROUTING_KEY), eq(event));
+        verify(rabbitTemplate, times(1)).convertAndSend(EXCHANGE, ACCEPTED_ROUTING_KEY, event);
     }
 
     @Test
@@ -114,10 +114,10 @@ class TeamEventPublisherTest {
                 1L, 101L, 5L, 300L, "CTO"
         );
         doThrow(new RuntimeException("RabbitMQ connection failed"))
-                .when(rabbitTemplate).convertAndSend(eq(EXCHANGE), eq(REJECTED_ROUTING_KEY), eq(event));
+                .when(rabbitTemplate).convertAndSend(EXCHANGE, REJECTED_ROUTING_KEY, event);
 
         org.junit.jupiter.api.Assertions.assertThrows(IllegalStateException.class, () -> teamEventPublisher.publishTeamMemberRejectedEvent(event));
 
-        verify(rabbitTemplate, times(1)).convertAndSend(eq(EXCHANGE), eq(REJECTED_ROUTING_KEY), eq(event));
+        verify(rabbitTemplate, times(1)).convertAndSend(EXCHANGE, REJECTED_ROUTING_KEY, event);
     }
 }

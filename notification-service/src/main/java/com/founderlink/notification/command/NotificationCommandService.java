@@ -15,6 +15,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
 @Service
+@SuppressWarnings("null")
 public class NotificationCommandService {
 
     private static final Logger log = LoggerFactory.getLogger(NotificationCommandService.class);

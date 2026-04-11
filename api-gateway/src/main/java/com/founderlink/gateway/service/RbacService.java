@@ -24,6 +24,7 @@ import java.util.Set;
 public class RbacService {
 
     private static final Logger log = LoggerFactory.getLogger(RbacService.class);
+    private static final String PATH_SEPARATOR = "/";
     private static final Comparator<RbacRule> RULE_SPECIFICITY = Comparator
             .comparingInt(RbacRule::depth).reversed()
             .thenComparingInt(RbacRule::wildcardCount)
@@ -47,6 +48,7 @@ public class RbacService {
         this.rulesByMethod = indexRulesByMethod(preparedRules);
     }
 
+    @SuppressWarnings("null")
     public void verifyAccess(HttpMethod method, String path, Role role) {
         String normalizedPath = normalizePath(path);
         if (method == null) {
@@ -77,15 +79,21 @@ public class RbacService {
         }
 
         if (!matchingRule.roles().contains(role)) {
-            log.debug("RBAC check: method={}, path={}, role={}, matchedRule={}, decision=DENY, reason=role_not_allowed",
-                    method, normalizedPath, role, matchingRule.describe());
-            log.warn("RBAC denied: method={}, path={}, role={}, matchedRule={}, reason=role_not_allowed",
-                    method, normalizedPath, role, matchingRule.describe());
+            if (log.isDebugEnabled()) {
+                log.debug("RBAC check: method={}, path={}, role={}, matchedRule={}, decision=DENY, reason=role_not_allowed",
+                        method, normalizedPath, role, matchingRule.describe());
+            }
+            if (log.isWarnEnabled()) {
+                log.warn("RBAC denied: method={}, path={}, role={}, matchedRule={}, reason=role_not_allowed",
+                        method, normalizedPath, role, matchingRule.describe());
+            }
             throw forbidden("Role not allowed for request");
         }
 
-        log.debug("RBAC check: method={}, path={}, role={}, matchedRule={}, decision=ALLOW",
-                method, normalizedPath, role, matchingRule.describe());
+        if (log.isDebugEnabled()) {
+            log.debug("RBAC check: method={}, path={}, role={}, matchedRule={}, decision=ALLOW",
+                    method, normalizedPath, role, matchingRule.describe());
+        }
     }
 
     private List<RbacRule> prepareRules(List<RbacProperties.Rule> configuredRules) {
@@ -289,8 +297,8 @@ public class RbacService {
         }
 
         String normalizedPath = path.trim().replace('\\', '/');
-        if (!normalizedPath.startsWith("/")) {
-            normalizedPath = "/" + normalizedPath;
+        if (!normalizedPath.startsWith(PATH_SEPARATOR)) {
+            normalizedPath = PATH_SEPARATOR + normalizedPath;
         }
 
         normalizedPath = normalizedPath.replaceAll("/+", "/").toLowerCase(Locale.ROOT);

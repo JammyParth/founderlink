@@ -15,6 +15,8 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 
+import com.founderlink.auth.exception.UserServiceConflictException;
+
 import static org.assertj.core.api.Assertions.assertThat;
 
 @ExtendWith(MockitoExtension.class)
@@ -53,6 +55,31 @@ class FeignErrorDecoderTest {
         assertThat(exception).isInstanceOf(UserServiceServerException.class);
         assertThat(((UserServiceClientException) exception).getStatus()).isEqualTo(502);
         assertThat(exception.getMessage()).contains("method=UserClient#createUser").contains("status=502");
+    }
+
+    @Test
+    void decodeShouldReturnConflictExceptionFor409() {
+        Exception exception = decoder.decode("UserClient#createUser", buildResponse(409, "Conflict"));
+
+        assertThat(exception).isInstanceOf(UserServiceConflictException.class);
+        assertThat(((UserServiceClientException) exception).getStatus()).isEqualTo(409);
+        assertThat(exception.getMessage()).contains("status=409");
+    }
+
+    @Test
+    void decodeShouldReturnClientExceptionForOther4xxStatus() {
+        Exception exception = decoder.decode("UserClient#createUser", buildResponse(401, "Unauthorized"));
+
+        assertThat(exception).isInstanceOf(UserServiceClientException.class);
+        assertThat(((UserServiceClientException) exception).getStatus()).isEqualTo(401);
+    }
+
+    @Test
+    void decodeShouldHandleNullReasonGracefully() {
+        Exception exception = decoder.decode("UserClient#createUser", buildResponse(400, null));
+
+        assertThat(exception).isInstanceOf(UserServiceBadRequestException.class);
+        assertThat(exception.getMessage()).contains("No reason provided");
     }
 
     private Response buildResponse(int status, String reason) {

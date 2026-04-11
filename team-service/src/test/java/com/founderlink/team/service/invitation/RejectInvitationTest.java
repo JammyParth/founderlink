@@ -31,6 +31,7 @@ import com.founderlink.team.mapper.InvitationMapper;
 import com.founderlink.team.repository.InvitationRepository;
 
 @ExtendWith(MockitoExtension.class)
+@SuppressWarnings("null")
 class RejectInvitationTest {
 
     @Mock

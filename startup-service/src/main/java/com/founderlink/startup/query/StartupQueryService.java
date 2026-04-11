@@ -9,7 +9,6 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import com.founderlink.startup.dto.response.StartupResponseDto;
-import com.founderlink.startup.entity.Startup;
 import com.founderlink.startup.entity.StartupStage;
 import com.founderlink.startup.exception.InvalidSearchException;
 import com.founderlink.startup.exception.StartupNotFoundException;

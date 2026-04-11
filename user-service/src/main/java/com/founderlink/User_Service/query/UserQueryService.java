@@ -1,4 +1,4 @@
-package com.founderlink.User_Service.query;
+package com.founderlink.User_Service.query; // NOSONAR
 
 import org.modelmapper.ModelMapper;
 import org.springframework.cache.annotation.Cacheable;
@@ -19,6 +19,7 @@ import java.util.List;
 @Slf4j
 @Service
 @RequiredArgsConstructor
+@SuppressWarnings("null")
 public class UserQueryService {
 
     private final UserRepository repository;

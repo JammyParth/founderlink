@@ -13,41 +13,6 @@ eureka:
       defaultZone: http://eureka-server:8761/eureka/
   instance:
     prefer-ip-address: true
-  # data:
-  #   redis:
-  #     host: localhost
-  #     port: 6379
-  # cache:
-  #   type: redis
-  #   redis:
-  #     time-to-live: 600000   # 10 minutes in ms
-#   datasource:
-#     url: jdbc:mysql://localhost:3306/startup_db
-#     username: root
-#     password: Anim@4748
-#     driver-class-name: com.mysql.cj.jdbc.Driver
-#   rabbitmq:
-      # host: localhost
-      # port: 5672
-      # username: guest
-      # password: guest
-#
-#  jpa:
-#     hibernate:
-#       ddl-auto: update
-#     show-sql: true
-#     properties:
-#       hibernate:
-#         format_sql: true
-#         dialect: org.hibernate.dialect.MySQLDialect
-#
-#
-#
-#eureka:
-#   client:
-#     service-url:
-#       defaultZone: http://localhost:8761/eureka/
-#     register-with-eureka: true
 #     fetch-registry: true
 #   instance:
 #     prefer-ip-address: true

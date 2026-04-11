@@ -35,6 +35,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
 @Transactional
+@SuppressWarnings("null")
 class UserServiceIntegrationTest {
 
     @Autowired
@@ -237,10 +238,8 @@ class UserServiceIntegrationTest {
     void should_fail_when_duplicate_email_inserted() {
         userService.createUser(authRequest(600L, "First", "duplicate@founderlink.com", Role.FOUNDER));
 
-        assertThatThrownBy(() -> {
-            userService.createUser(authRequest(601L, "Second", "duplicate@founderlink.com", Role.INVESTOR));
-            userRepository.flush();
-        }).isInstanceOf(DataIntegrityViolationException.class);
+        userService.createUser(authRequest(601L, "Second", "duplicate@founderlink.com", Role.INVESTOR));
+        assertThatThrownBy(userRepository::flush).isInstanceOf(DataIntegrityViolationException.class);
     }
 
     @Test

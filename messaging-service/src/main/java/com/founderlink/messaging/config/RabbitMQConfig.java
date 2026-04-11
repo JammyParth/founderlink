@@ -28,6 +28,7 @@ public class RabbitMQConfig {
 
     // ── Trace propagation: injects TraceId into outgoing RabbitMQ messages ──
     @Bean
+    @SuppressWarnings("null")
     public RabbitTemplate rabbitTemplate(ConnectionFactory connectionFactory,
                                           ObservationRegistry observationRegistry) {
         RabbitTemplate template = new RabbitTemplate(connectionFactory);

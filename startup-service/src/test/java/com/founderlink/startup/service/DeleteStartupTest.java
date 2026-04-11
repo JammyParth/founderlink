@@ -30,6 +30,7 @@ import com.founderlink.startup.mapper.StartupMapper;
 import com.founderlink.startup.repository.StartupRepository;
 
 @ExtendWith(MockitoExtension.class)
+@SuppressWarnings("null")
 class DeleteStartupTest {
 
     @Mock

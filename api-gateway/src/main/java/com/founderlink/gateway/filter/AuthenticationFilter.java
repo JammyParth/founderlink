@@ -10,6 +10,7 @@ import org.springframework.cloud.gateway.filter.GatewayFilterChain;
 import org.springframework.cloud.gateway.filter.GlobalFilter;
 import org.springframework.core.Ordered;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.server.reactive.ServerHttpRequest;
@@ -50,10 +51,12 @@ public class AuthenticationFilter implements GlobalFilter, Ordered {
     }
 
     @Override
+    @SuppressWarnings("null")
     public Mono<Void> filter(ServerWebExchange exchange, GatewayFilterChain chain) {
         ServerHttpRequest request = exchange.getRequest();
         String path = request.getPath().value();
-        String method = request.getMethod() != null ? request.getMethod().name() : "UNKNOWN";
+        HttpMethod httpMethod = request.getMethod();
+        String method = httpMethod != null ? httpMethod.name() : "UNKNOWN";
         
         // Allow OPTIONS requests globally for CORS preflight
         if ("OPTIONS".equals(method)) {
@@ -79,22 +82,12 @@ public class AuthenticationFilter implements GlobalFilter, Ordered {
             // Extract token
             String token = extractBearerToken(request);
             log.info("Token extracted successfully. Token length: {}", token.length());
-            log.debug("Token (first 50 chars): {}", token.substring(0, Math.min(50, token.length())));
-            
-            // Decode token payload for debugging
-            try {
-                String[] parts = token.split("\\.");
-                if (parts.length == 3) {
-                    String header = new String(Base64.getUrlDecoder().decode(parts[0]));
-                    String payload = new String(Base64.getUrlDecoder().decode(parts[1]));
-                    log.debug("JWT Header: {}", header);
-                    log.debug("JWT Payload: {}", payload);
-                } else {
-                    log.warn("Token does not have 3 parts. Parts count: {}", parts.length);
-                }
-            } catch (Exception e) {
-                log.debug("Could not decode token: {}", e.getMessage());
+            if (log.isDebugEnabled()) {
+                log.debug("Token (first 50 chars): {}", token.substring(0, Math.min(50, token.length())));
             }
+
+            // Decode token payload for debugging
+            decodeTokenPayloadForDebug(token);
             
             // Authenticate user
             AuthenticatedUser user = jwtService.authenticate(token);
@@ -163,16 +156,18 @@ public class AuthenticationFilter implements GlobalFilter, Ordered {
 
     private String extractBearerToken(ServerHttpRequest request) {
         String authorization = request.getHeaders().getFirst(HttpHeaders.AUTHORIZATION);
-        log.debug("Authorization header: {}", authorization);
-        
-        if (!StringUtils.hasText(authorization)) {
+        log.debug("Authorization header present: {}", authorization != null);
+
+        if (authorization == null || authorization.isBlank()) {
             log.warn("Authorization header is missing");
             throw unauthorized("Missing Authorization header");
         }
-        
+
         if (!authorization.startsWith("Bearer ")) {
-            log.warn("Authorization header does not start with 'Bearer '. Actual: {}", 
-                authorization.substring(0, Math.min(20, authorization.length())));
+            if (log.isWarnEnabled()) {
+                log.warn("Authorization header does not start with 'Bearer '. Actual: {}",
+                    authorization.substring(0, Math.min(20, authorization.length())));
+            }
             throw unauthorized("Authorization header must start with 'Bearer '");
         }
 
@@ -183,6 +178,25 @@ public class AuthenticationFilter implements GlobalFilter, Ordered {
         }
         
         return token;
+    }
+
+    private void decodeTokenPayloadForDebug(String token) {
+        if (!log.isDebugEnabled()) {
+            return;
+        }
+        try {
+            String[] parts = token.split("\\.");
+            if (parts.length == 3) {
+                String header = new String(Base64.getUrlDecoder().decode(parts[0]));
+                String payload = new String(Base64.getUrlDecoder().decode(parts[1]));
+                log.debug("JWT Header: {}", header);
+                log.debug("JWT Payload: {}", payload);
+            } else {
+                log.warn("Token does not have 3 parts. Parts count: {}", parts.length);
+            }
+        } catch (Exception e) {
+            log.debug("Could not decode token: {}", e.getMessage());
+        }
     }
 
     private ResponseStatusException unauthorized(String message) {

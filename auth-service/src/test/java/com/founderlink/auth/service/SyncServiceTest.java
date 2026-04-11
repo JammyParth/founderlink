@@ -17,7 +17,7 @@ import org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfigurat
 import org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration;
 import org.springframework.boot.autoconfigure.security.servlet.UserDetailsServiceAutoConfiguration;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.ResponseEntity;
 
@@ -60,7 +60,7 @@ class SyncServiceTest {
     @Autowired
     private CircuitBreakerRegistry circuitBreakerRegistry;
 
-    @MockBean
+    @MockitoBean
     private UserClient userClient;
 
     private User user;
