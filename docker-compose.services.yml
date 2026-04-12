@@ -1,0 +1,126 @@
+version: "3.9"
+
+networks:
+  founderlink-internal:
+    external: true
+  proxy-net:
+    external: true
+
+volumes:
+  service-logs:
+
+services:
+
+  auth-service:
+    image: founderlink/auth-service:${TAG}
+    env_file:
+      - .env  
+    environment:
+      LOGGING_FILE_NAME: /var/log/founderlink/auth-service.log
+    volumes:
+      - service-logs:/var/log/founderlink
+    networks: [founderlink-internal]
+    restart: unless-stopped
+
+  user-service:
+    image: founderlink/user-service:${TAG}
+    env_file:
+      - .env
+    environment:
+      LOGGING_FILE_NAME: /var/log/founderlink/user-service.log
+    volumes:
+      - service-logs:/var/log/founderlink
+    networks: [founderlink-internal]
+    restart: unless-stopped
+
+  startup-service:
+    image: founderlink/startup-service:${TAG}
+    env_file:
+      - .env
+    environment:
+      LOGGING_FILE_NAME: /var/log/founderlink/startup-service.log
+    volumes:
+      - service-logs:/var/log/founderlink
+    networks: [founderlink-internal]
+    restart: unless-stopped
+
+  investment-service:
+    image: founderlink/investment-service:${TAG}
+    env_file:
+      - .env
+    environment:
+      LOGGING_FILE_NAME: /var/log/founderlink/investment-service.log
+    volumes:
+      - service-logs:/var/log/founderlink
+    networks: [founderlink-internal]
+    restart: unless-stopped
+
+  team-service:
+    image: founderlink/team-service:${TAG}
+    env_file:
+      - .env
+    environment:
+      LOGGING_FILE_NAME: /var/log/founderlink/team-service.log
+    volumes:
+      - service-logs:/var/log/founderlink
+    networks: [founderlink-internal]
+    restart: unless-stopped
+
+  messaging-service:
+    image: founderlink/messaging-service:${TAG}
+    env_file:
+      - .env
+    environment:
+      LOGGING_FILE_NAME: /var/log/founderlink/messaging-service.log
+    volumes:
+      - service-logs:/var/log/founderlink
+    networks: [founderlink-internal]
+    restart: unless-stopped
+
+  notification-service:
+    image: founderlink/notification-service:${TAG}
+    env_file:
+      - .env
+    environment:
+      LOGGING_FILE_NAME: /var/log/founderlink/notification-service.log
+    volumes:
+      - service-logs:/var/log/founderlink
+    networks: [founderlink-internal]
+    restart: unless-stopped
+
+  payment-service:
+    image: founderlink/payment-service:${TAG}
+    env_file:
+      - .env
+    environment:
+      LOGGING_FILE_NAME: /var/log/founderlink/payment-service.log
+    volumes:
+      - service-logs:/var/log/founderlink
+    networks: [founderlink-internal]
+    restart: unless-stopped
+
+  wallet-service:
+    image: founderlink/wallet-service:${TAG}
+    env_file:
+      - .env
+    environment:
+      LOGGING_FILE_NAME: /var/log/founderlink/wallet-service.log
+    volumes:
+      - service-logs:/var/log/founderlink
+    networks: [founderlink-internal]
+    restart: unless-stopped
+
+  api-gateway:
+    image: founderlink/api-gateway:${TAG}
+    env_file:
+      - .env
+    environment:
+      LOGGING_FILE_NAME: /var/log/founderlink/api-gateway.log
+    volumes:
+      - service-logs:/var/log/founderlink
+    ports:
+      - "8090:8090"
+    networks:
+      - founderlink-internal
+      - proxy-net
+    restart: unless-stopped

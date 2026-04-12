@@ -1,0 +1,39 @@
+server:
+  port: 8086
+
+spring:
+  application:
+    name: messaging-service
+  config:
+    import: configserver:http://config-server:8888
+
+eureka:
+  client:
+    service-url:
+      defaultZone: http://eureka-server:8761/eureka/
+  instance:
+    prefer-ip-address: true
+#     instances:
+#       messagingService:
+#         register-health-indicator: true
+#         sliding-window-size: 10
+#         minimum-number-of-calls: 5
+#         failure-rate-threshold: 50
+#         wait-duration-in-open-state: 10s
+#         permitted-number-of-calls-in-half-open-state: 3
+#         sliding-window-type: COUNT_BASED
+#         automatic-transition-from-open-to-half-open-enabled: true
+
+#   retry:
+#     instances:
+#       messagingService:
+#         max-attempts: 3
+#         wait-duration: 500ms
+#         enable-exponential-backoff: true
+#         exponential-backoff-multiplier: 2
+
+#   timelimiter:
+#     instances:
+#       messagingService:
+#         timeout-duration: 3s
+#         cancel-running-future: true

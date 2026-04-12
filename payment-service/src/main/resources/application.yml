@@ -1,0 +1,53 @@
+server:
+  port: 8088
+
+spring:
+  application:
+    name: payment-service
+  config:
+    import: configserver:http://config-server:8888
+
+eureka:
+  client:
+    service-url:
+      defaultZone: http://eureka-server:8761/eureka/
+  instance:
+    prefer-ip-address: true
+#     failed:
+#       routing-key: payment.failed
+
+# eureka:
+#   client:
+#     service-url:
+#       defaultZone: http://localhost:8761/eureka/
+#     register-with-eureka: true
+#     fetch-registry: true
+
+# management:
+#   endpoints:
+#     web:
+#       exposure:
+#         include: health,info
+#   endpoint:
+#     health:
+#       show-details: always
+
+# resilience4j:
+#   circuitbreaker:
+#     instances:
+#       wallet-service:
+#         sliding-window-size: 10
+#         failure-rate-threshold: 50
+#         wait-duration-in-open-state: 10s
+
+# logging:
+#   level:
+#     root: INFO
+#     com.founderlink.payment: DEBUG
+#   file:
+#     name: logs/payment-service.log
+
+# razorpay:
+#   key:
+#     id: ${RAZORPAY_KEY_ID}
+#     secret: ${RAZORPAY_KEY_SECRET}
