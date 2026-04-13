@@ -63,7 +63,8 @@ export class NavbarComponent implements OnInit, OnDestroy {
           this.notifications.update(list => list.map(n => n.id === id ? { ...n, read: true } : n));
           this.unreadCount.update(c => Math.max(0, c - 1));
         }
-      }
+      },
+      error: () => { }
     });
   }
 

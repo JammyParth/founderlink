@@ -29,6 +29,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @WebMvcTest(PaymentController.class)
 @ExtendWith(MockitoExtension.class)
+@SuppressWarnings("null")
 class PaymentControllerTest {
 
     @Autowired

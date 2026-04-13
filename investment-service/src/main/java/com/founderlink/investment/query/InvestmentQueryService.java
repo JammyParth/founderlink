@@ -34,6 +34,7 @@ public class InvestmentQueryService {
     // ── getInvestmentById — no Feign call, no retry needed ───────────────────
 
     @Cacheable(value = "investmentById", key = "#investmentId")
+    @SuppressWarnings("null")
     public InvestmentResponseDto getInvestmentById(Long investmentId) {
         log.info("QUERY - getInvestmentById: {} (cache miss, hitting DB)", investmentId);
         return investmentRepository.findById(investmentId)
@@ -61,6 +62,7 @@ public class InvestmentQueryService {
                 .map(investmentMapper::toResponseDto);
     }
 
+    @SuppressWarnings("java:S1172")
     public List<InvestmentResponseDto> getInvestmentsByStartupIdFallback(Long startupId, Long founderId,
                                                                            Throwable throwable) {
         if (throwable instanceof StartupNotFoundException

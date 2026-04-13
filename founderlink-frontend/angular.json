@@ -65,7 +65,17 @@
           "defaultConfiguration": "development"
         },
         "test": {
-          "builder": "@angular/build:unit-test"
+          "builder": "@angular/build:unit-test",
+          "options": {
+            "runnerConfig": true
+          },
+          "configurations": {
+            "coverage": {
+              "coverage": true,
+              "watch": false,
+              "coverageReporters": ["html", "text", "text-summary", "lcov"]
+            }
+          }
         }
       }
     }

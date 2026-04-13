@@ -42,6 +42,7 @@ import static org.mockito.Mockito.when;
 @AutoConfigureWebTestClient
 @ActiveProfiles("test")
 @Import(GatewayRbacIntegrationTest.DownstreamEchoController.class)
+@SuppressWarnings("null")
 class GatewayRbacIntegrationTest {
 
     @Autowired

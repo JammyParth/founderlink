@@ -2,6 +2,7 @@ package com.founderlink.investment.service;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 import java.math.BigDecimal;
@@ -29,7 +30,6 @@ import com.founderlink.investment.events.InvestmentEventPublisher;
 import com.founderlink.investment.events.InvestmentRejectedEvent;
 import com.founderlink.investment.mapper.InvestmentMapper;
 import com.founderlink.investment.repository.InvestmentRepository;
-import com.founderlink.investment.serviceImpl.InvestmentServiceImpl;
 
 /**
  * Test suite for investment status update event publishing (PHASE 1).
@@ -37,6 +37,7 @@ import com.founderlink.investment.serviceImpl.InvestmentServiceImpl;
  * are properly published when status changes.
  */
 @ExtendWith(MockitoExtension.class)
+@SuppressWarnings("null")
 class UpdateInvestmentStatusEventPublishingTest {
 
     @Mock
@@ -102,7 +103,7 @@ class UpdateInvestmentStatusEventPublishingTest {
         when(investmentMapper.toResponseDto(savedInvestment)).thenReturn(approvedResponseDto);
 
         // Act
-        InvestmentResponseDto result = investmentService.updateInvestmentStatus(1L, 5L, dto);
+        investmentService.updateInvestmentStatus(1L, 5L, dto);
 
         // Assert
         verify(eventPublisher).publishInvestmentApprovedEvent(any(InvestmentApprovedEvent.class));
@@ -172,7 +173,7 @@ class UpdateInvestmentStatusEventPublishingTest {
         when(investmentMapper.toResponseDto(savedInvestment)).thenReturn(rejectedResponseDto);
 
         // Act
-        InvestmentResponseDto result = investmentService.updateInvestmentStatus(1L, 5L, dto);
+        investmentService.updateInvestmentStatus(1L, 5L, dto);
 
         // Assert
         verify(eventPublisher).publishInvestmentRejectedEvent(any(InvestmentRejectedEvent.class));
@@ -244,5 +245,6 @@ class UpdateInvestmentStatusEventPublishingTest {
 
         // Assert: Completing should NOT publish any event (COMPLETED is final state)
         // Only APPROVED and REJECTED transitions should trigger events
+        verifyNoInteractions(eventPublisher);
     }
 }

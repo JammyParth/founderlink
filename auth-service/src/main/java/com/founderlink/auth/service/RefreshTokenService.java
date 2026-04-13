@@ -54,6 +54,7 @@ public class RefreshTokenService {
     }
 
     @Transactional
+    @SuppressWarnings("null")
     public String createToken(Long userId) {
 
         enforceMaxSessions(userId);
@@ -99,6 +100,7 @@ public class RefreshTokenService {
     }
 
     @Transactional
+    @SuppressWarnings("java:S6809")
     public String rotateToken(String oldToken) {
 
         RefreshToken currentToken = findByRawTokenForUpdate(oldToken);

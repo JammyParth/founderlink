@@ -23,12 +23,12 @@ import java.util.Optional;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
+@SuppressWarnings("null")
 class UserCommandServiceTest {
 
     @Mock
@@ -126,7 +126,7 @@ class UserCommandServiceTest {
         dto.setName("Alice Updated");
         dto.setBio("New bio");
 
-        UserResponseDto result = service.updateUser(1L, dto);
+        service.updateUser(1L, dto);
 
         ArgumentCaptor<User> captor = ArgumentCaptor.forClass(User.class);
         verify(repository).save(captor.capture());
@@ -140,7 +140,8 @@ class UserCommandServiceTest {
     void updateUser_whenUserNotFound_shouldThrowUserNotFoundException() {
         when(repository.findById(99L)).thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> service.updateUser(99L, new UserRequestDto()))
+        UserRequestDto reqDto = new UserRequestDto();
+        assertThatThrownBy(() -> service.updateUser(99L, reqDto))
                 .isInstanceOf(UserNotFoundException.class)
                 .hasMessage("User not found.");
 

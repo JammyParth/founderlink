@@ -28,11 +28,12 @@ class GlobalExceptionHandlerTest {
 
         ResponseEntity<ErrorResponse> response = handler.handleUserNotFoundException(ex);
 
+        var body = response.getBody();
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
-        assertThat(response.getBody()).isNotNull();
-        assertThat(response.getBody().getStatus()).isEqualTo(404);
-        assertThat(response.getBody().getMessage()).isEqualTo("NOT_FOUND");
-        assertThat(response.getBody().getError()).isEqualTo("User not found.");
+        assertThat(body).isNotNull();
+        assertThat(body.getStatus()).isEqualTo(404);
+        assertThat(body.getMessage()).isEqualTo("NOT_FOUND");
+        assertThat(body.getError()).isEqualTo("User not found.");
     }
 
     @Test
@@ -41,11 +42,12 @@ class GlobalExceptionHandlerTest {
 
         ResponseEntity<ErrorResponse> response = handler.handleConflictException(ex);
 
+        var body = response.getBody();
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.CONFLICT);
-        assertThat(response.getBody()).isNotNull();
-        assertThat(response.getBody().getStatus()).isEqualTo(409);
-        assertThat(response.getBody().getMessage()).isEqualTo("CONFLICT");
-        assertThat(response.getBody().getError()).isEqualTo("User identity data does not match existing record.");
+        assertThat(body).isNotNull();
+        assertThat(body.getStatus()).isEqualTo(409);
+        assertThat(body.getMessage()).isEqualTo("CONFLICT");
+        assertThat(body.getError()).isEqualTo("User identity data does not match existing record.");
     }
 
     @Test
@@ -54,11 +56,12 @@ class GlobalExceptionHandlerTest {
 
         ResponseEntity<ErrorResponse> response = handler.handleException(ex);
 
+        var body = response.getBody();
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.INTERNAL_SERVER_ERROR);
-        assertThat(response.getBody()).isNotNull();
-        assertThat(response.getBody().getStatus()).isEqualTo(500);
-        assertThat(response.getBody().getMessage()).isEqualTo("INTERNAL_SERVER_ERROR");
-        assertThat(response.getBody().getError()).isEqualTo("Something went wrong");
+        assertThat(body).isNotNull();
+        assertThat(body.getStatus()).isEqualTo(500);
+        assertThat(body.getMessage()).isEqualTo("INTERNAL_SERVER_ERROR");
+        assertThat(body.getError()).isEqualTo("Something went wrong");
     }
 
     @Test
@@ -72,10 +75,11 @@ class GlobalExceptionHandlerTest {
 
         ResponseEntity<ErrorResponse> response = handler.handleValidation(ex);
 
+        var body = response.getBody();
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
-        assertThat(response.getBody()).isNotNull();
-        assertThat(response.getBody().getStatus()).isEqualTo(400);
-        assertThat(response.getBody().getMessage()).isEqualTo("VALIDATION_ERROR");
-        assertThat(response.getBody().getError()).isEqualTo("Email is Required");
+        assertThat(body).isNotNull();
+        assertThat(body.getStatus()).isEqualTo(400);
+        assertThat(body.getMessage()).isEqualTo("VALIDATION_ERROR");
+        assertThat(body.getError()).isEqualTo("Email is Required");
     }
 }
