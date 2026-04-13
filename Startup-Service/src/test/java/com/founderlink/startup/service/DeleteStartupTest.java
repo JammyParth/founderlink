@@ -19,18 +19,19 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import com.founderlink.startup.dto.request.StartupRequestDto;
-import com.founderlink.startup.dto.response.StartupResponseDto;
 import com.founderlink.startup.entity.Startup;
 import com.founderlink.startup.entity.StartupStage;
 import com.founderlink.startup.command.StartupCommandService;
+import com.founderlink.startup.events.StartupDeletedEvent;
+import com.founderlink.startup.events.StartupEventPublisher;
 import com.founderlink.startup.exception.ForbiddenAccessException;
 import com.founderlink.startup.exception.StartupNotFoundException;
 import com.founderlink.startup.mapper.StartupMapper;
 import com.founderlink.startup.repository.StartupRepository;
 
 @ExtendWith(MockitoExtension.class)
-class UpdateStartupTest {
+@SuppressWarnings("null")
+class DeleteStartupTest {
 
     @Mock
     private StartupRepository startupRepository;
@@ -38,52 +39,32 @@ class UpdateStartupTest {
     @Mock
     private StartupMapper startupMapper;
 
+    @Mock
+    private StartupEventPublisher eventPublisher;
+
     @InjectMocks
     private StartupCommandService startupService;
 
     private Startup startup;
-    private StartupRequestDto requestDto;
-    private StartupResponseDto responseDto;
 
     @BeforeEach
     void setUp() {
         startup = new Startup();
         startup.setId(1L);
         startup.setName("EduReach");
-        startup.setDescription("Old description");
-        startup.setIndustry("EdTech");
-        startup.setProblemStatement("Old problem");
-        startup.setSolution("Old solution");
-        startup.setFundingGoal(
-                new BigDecimal("5000000.00"));
-        startup.setStage(StartupStage.MVP);
         startup.setFounderId(5L);
         startup.setIsDeleted(false);
+        startup.setStage(StartupStage.MVP);
+        startup.setFundingGoal(
+                new BigDecimal("5000000.00"));
         startup.setCreatedAt(LocalDateTime.now());
-
-        requestDto = new StartupRequestDto();
-        requestDto.setName("EduReach Updated");
-        requestDto.setDescription("New description");
-        requestDto.setIndustry("EdTech");
-        requestDto.setProblemStatement("New problem");
-        requestDto.setSolution("New solution");
-        requestDto.setFundingGoal(
-                new BigDecimal("8000000.00"));
-        requestDto.setStage(StartupStage.EARLY_TRACTION);
-
-        responseDto = new StartupResponseDto();
-        responseDto.setId(1L);
-        responseDto.setName("EduReach Updated");
-        responseDto.setFounderId(5L);
-        responseDto.setStage(
-                StartupStage.EARLY_TRACTION);
     }
 
-   
-    // SUCCESS
-    
+
+    // SUCCESS — SOFT DELETE
+
     @Test
-    void updateStartup_Success() {
+    void deleteStartup_Success() {
 
         // Arrange
         when(startupRepository
@@ -92,28 +73,31 @@ class UpdateStartupTest {
         when(startupRepository.save(
                 any(Startup.class)))
                 .thenReturn(startup);
-        when(startupMapper.toResponseDto(startup))
-                .thenReturn(responseDto);
 
         // Act
-        StartupResponseDto result = startupService
-                .updateStartup(1L, 5L, requestDto);
+        startupService.deleteStartup(1L, 5L);
 
-        // Assert
-        assertThat(result).isNotNull();
-        assertThat(result.getName())
-                .isEqualTo("EduReach Updated");
-        assertThat(result.getStage())
-                .isEqualTo(StartupStage.EARLY_TRACTION);
+        // Assert soft delete
+        assertThat(startup.getIsDeleted())
+                .isTrue();
 
+        // Verify save called not delete
         verify(startupRepository, times(1))
-                .save(any(Startup.class));
+                .save(startup);
+        verify(startupRepository, never())
+                .delete(any(Startup.class));
+
+        // Verify event published
+        verify(eventPublisher, times(1))
+                .publishStartupDeletedEvent(
+                        any(StartupDeletedEvent.class));
     }
 
-    // NOT FOUND
 
+    // NOT FOUND
+    
     @Test
-    void updateStartup_NotFound_ThrowsException() {
+    void deleteStartup_NotFound_ThrowsException() {
 
         // Arrange
         when(startupRepository
@@ -123,8 +107,7 @@ class UpdateStartupTest {
         // Act & Assert
         assertThatThrownBy(() ->
                 startupService
-                        .updateStartup(
-                                999L, 5L, requestDto))
+                        .deleteStartup(999L, 5L))
                 .isInstanceOf(
                         StartupNotFoundException.class)
                 .hasMessage(
@@ -132,17 +115,16 @@ class UpdateStartupTest {
 
         verify(startupRepository, never())
                 .save(any(Startup.class));
+        verify(eventPublisher, never())
+                .publishStartupDeletedEvent(any());
     }
 
- 
     // NOT OWNER
 
     @Test
-    void updateStartup_NotOwner_ThrowsException() {
+    void deleteStartup_NotOwner_ThrowsException() {
 
         // Arrange
-        // startup founderId = 5
-        // but founderId 99 trying to update
         when(startupRepository
                 .findByIdAndIsDeletedFalse(1L))
                 .thenReturn(Optional.of(startup));
@@ -150,46 +132,41 @@ class UpdateStartupTest {
         // Act & Assert
         assertThatThrownBy(() ->
                 startupService
-                        .updateStartup(
-                                1L, 99L, requestDto))
+                        .deleteStartup(1L, 99L))
                 .isInstanceOf(
                         ForbiddenAccessException.class)
                 .hasMessage(
                         "You are not authorized " +
-                        "to update this startup");
+                        "to delete this startup");
 
         verify(startupRepository, never())
                 .save(any(Startup.class));
+        verify(eventPublisher, never())
+                .publishStartupDeletedEvent(any());
     }
 
-    // STAGE UPDATE
-
+    // ALREADY DELETED
+    
     @Test
-    void updateStartup_StageChange_Success() {
+    void deleteStartup_AlreadyDeleted_ThrowsException() {
 
         // Arrange
-        startup.setStage(StartupStage.IDEA);
-        requestDto.setStage(StartupStage.SCALING);
-
-        StartupResponseDto scalingResponse =
-                new StartupResponseDto();
-        scalingResponse.setId(1L);
-        scalingResponse.setStage(StartupStage.SCALING);
-
+        // findByIdAndIsDeletedFalse returns empty
+        // because already deleted
         when(startupRepository
                 .findByIdAndIsDeletedFalse(1L))
-                .thenReturn(Optional.of(startup));
-        when(startupRepository.save(
-                any(Startup.class)))
-                .thenReturn(startup);
-        when(startupMapper.toResponseDto(startup))
-                .thenReturn(scalingResponse);
+                .thenReturn(Optional.empty());
 
-       
-        StartupResponseDto result = startupService
-                .updateStartup(1L, 5L, requestDto);
+        // Act & Assert
+        assertThatThrownBy(() ->
+                startupService
+                        .deleteStartup(1L, 5L))
+                .isInstanceOf(
+                        StartupNotFoundException.class)
+                .hasMessage(
+                        "Startup not found with id: 1");
 
-        assertThat(result.getStage())
-                .isEqualTo(StartupStage.SCALING);
+        verify(startupRepository, never())
+                .save(any(Startup.class));
     }
 }
